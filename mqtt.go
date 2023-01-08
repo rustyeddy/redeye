@@ -178,7 +178,7 @@ func (m *Messanger) Publish(topic, text string) error {
 }
 
 // getMessanger
-func ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m Messanger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var status *MessangerStatus
 	if m := messanger; m != nil {
 		status = m.GetStatus()

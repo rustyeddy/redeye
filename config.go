@@ -39,7 +39,7 @@ func (c *Configuration) Save(path string) (err error) {
 }
 
 // ServeHTTP provides the Web service for the configuration module
-func (c *Configuration) ServeHTTP(w http.ResponseWriter) {
+func (c Configuration) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(Config)
 	json.NewEncoder(w).Encode(c)
 }
