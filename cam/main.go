@@ -15,7 +15,7 @@ type Configuration struct {
 
 var (
 	config Configuration
-	web    redeye.WebServer
+	web    *redeye.WebServer
 	vid    *redeye.VideoPlayer
 
 	cmdQ chan redeye.TLV
@@ -25,8 +25,9 @@ var (
 func init() {
 	config.Configuration = &redeye.Config
 	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
-	flag.StringVar(&config.Broker, "broker", "tcp://10.24.10.10:1883", "MQTT Broker")
+	flag.StringVar(&config.Broker, "broker", "tcp://localhost:1883", "MQTT Broker")
 	flag.StringVar(&config.BasePath, "basepath", "/redeye", "BasePath for MQTT Topics and REST URL")
+	flag.BoolVar(&config.Debug, "debug", true, "Turn on debugging default off")
 	flag.StringVar(&config.ID, "id", "", "Set the ID for this node")
 }
 
@@ -60,8 +61,12 @@ func main() {
 	log.Printf("Subscribers: %+v\n", msg.Subscriptions)
 
 	log.Println("Sending Play command to video Q")
-	vidQ <- redeye.NewTLV(redeye.CMDPlay, 2)
+	// vidQ <- redeye.NewTLV(redeye.CMDPlay, 2)
+	msgQ <- redeye.NewTLV(redeye.CMDPlay, 2)
+	log.Println("Returned with New TLV")
 	for true {
+
+		log.Println("Waiting for video commands")
 
 		var cmd redeye.TLV
 		select {
@@ -76,7 +81,7 @@ func main() {
 			time.Sleep(time.Second * 10)
 		}
 	}
-
+		
 	wg.Wait()
 
 }
