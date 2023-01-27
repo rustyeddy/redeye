@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/redeyelab/redeye/vidsrc"
+	"github.com/rustyeddy/redeye/vidsrc"
 )
 
 var (
