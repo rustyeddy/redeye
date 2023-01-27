@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redeyelab/redeye"
+	"github.com/rustyeddy/redeye"
 )
 
 type Configuration struct {
