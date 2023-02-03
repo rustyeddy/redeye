@@ -1,6 +1,6 @@
 package vidsrc
 
-import "github.com/redeyelab/redeye/img"
+import "github.com/rustyeddy/redeye/img"
 
 type Vidsrc interface {
 	Play()
