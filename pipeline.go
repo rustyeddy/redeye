@@ -6,7 +6,7 @@ import (
 	"plugin"
 	"sync"
 
-	"github.com/redeyelab/redeye/img"
+	"github.com/rustyeddy/redeye/img"
 )
 
 // VideoPipeline is a series of pipes that accepts and image
