@@ -15,9 +15,8 @@ var (
 // the moment any camera or device string that can be read
 // by OpenCV are supported. A version
 type VideoPlayer struct {
-	vidsrc.Camera          // where the videos come from change to generic
-	Q             chan TLV // where to send the video
-
+	Camera			   // where the videos come from change to generic
+	Q             chan TLV		// where to send the video
 	VideoPipeline
 }
 
@@ -33,7 +32,7 @@ func GetVideoPlayer() (v *VideoPlayer) {
 // TODO Change this to accept a configmap
 func NewVideoPlayer() (video *VideoPlayer) {
 	video = &VideoPlayer{}
-	video.Camstr = "/dev/video1"
+	//video.Camstr = "/dev/video1"
 	return video
 }
 
@@ -101,15 +100,15 @@ func (vid *VideoPlayer) Play() error {
 
 		// Check to see if a nsapshot has been requested, if so then
 		// take a snapshot. TODO put this in the video pipeline
-		if vid.SnapRequest {
-			// fname := "pub/img/snapshot.jpg"
-			// Create the store
+		// if vid.SnapRequest {
+		// 	// fname := "pub/img/snapshot.jpg"
+		// 	// Create the store
 
-			// if err := frame.Save(fname); err != nil {
-			// 	return fmt.Errorf("filename: snapshot save failed %s", fname)
-			// }
-			vid.SnapRequest = false
-		}
+		// 	// if err := frame.Save(fname); err != nil {
+		// 	// 	return fmt.Errorf("filename: snapshot save failed %s", fname)
+		// 	// }
+		// 	vid.SnapRequest = false
+		// }
 	}
 	return nil
 }
@@ -133,7 +132,7 @@ type VideoPlayerStatus struct {
 
 func (vid *VideoPlayer) Status() (status *VideoPlayerStatus) {
 	status = &VideoPlayerStatus{
-		Camstr:    vid.Camstr,
+		// Camstr:    vid.Camstr,
 		Recording: vid.Recording,
 	}
 	if vid.VideoPipeline != nil {
