@@ -52,6 +52,8 @@ func main() {
 		return
 	}
 	defer webcam.Close()
+	webcam.Set(gocv.VideoCaptureFrameWidth, 1280)
+	webcam.Set(gocv.VideoCaptureFrameHeight, 720)
 
 	// create the mjpeg stream
 	stream = mjpeg.NewStream()
@@ -64,6 +66,8 @@ func main() {
 	// start http server
 	http.Handle("/mjpeg", stream)
 
+	imgQ := updateJPEG()
+
 	go func() {
 		for {
 			if ok := webcam.Read(&img); !ok {
@@ -71,15 +75,13 @@ func main() {
 				time.Sleep(1 * time.Second)
 				continue
 			}
+
 			if img.Empty() {
 				log.Println("Empty image")
 				continue
 			}
 
-			buf, _ := gocv.IMEncode(".jpg", img)
-			stream.UpdateJPEG(buf.GetBytes())
-			buf.Close()
-
+			imgQ <- &img
 			time.Sleep(5 * time.Millisecond)
 		}
 	}()
@@ -87,3 +89,19 @@ func main() {
 	log.Fatal(http.ListenAndServe(host, nil))
 }
 
+func updateJPEG() chan *gocv.Mat {
+	imgQ := make(chan *gocv.Mat)
+
+	go func() {
+		for {
+			select {
+			case img := <-imgQ:
+				buf, _ := gocv.IMEncode(".jpg", *img)
+				stream.UpdateJPEG(buf.GetBytes())
+				buf.Close()
+			}
+		}
+	}()
+
+	return imgQ
+}
