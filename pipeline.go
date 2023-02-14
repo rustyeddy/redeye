@@ -16,7 +16,6 @@ import (
 type VideoPipeline interface {
 	Name() string
 	Setup() error
-	//Send(*gocv.Mat) *gocv.Mat
 	Send(interface{}) interface{}
 }
 

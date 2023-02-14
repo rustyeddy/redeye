@@ -3,8 +3,6 @@ package redeye
 import (
 	"fmt"
 	"log"
-
-	"github.com/rustyeddy/redeye/vidsrc"
 )
 
 var (
@@ -17,7 +15,9 @@ var (
 type VideoPlayer struct {
 	Camera			   // where the videos come from change to generic
 	Q             chan TLV		// where to send the video
+	Recording	  bool		
 	VideoPipeline
+	
 }
 
 // GetVideoPlayer

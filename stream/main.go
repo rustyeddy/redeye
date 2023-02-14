@@ -20,6 +20,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "net/http/pprof"
 
@@ -41,8 +42,8 @@ func main() {
 	}
 
 	// parse args
-	deviceID := os.Args[1]
-	host := os.Args[2]
+	deviceID := "/dev/video0"
+	host := ":1234"
 
 	// open webcam
 	webcam, err = gocv.OpenVideoCapture(deviceID)
@@ -58,31 +59,31 @@ func main() {
 	img := gocv.NewMat()
 	defer img.Close()
 
-	for {
-		if ok := webcam.Read(&img); !ok {
-			fmt.Printf("Device closed: %v\n", deviceID)
-			return
-		}
-		log.Print("Image")
-		if img.Empty() {
-			continue
-		}
-		log.Println("not empty")
-
-		buf, _ := gocv.IMEncode(".jpg", img)
-		stream.UpdateJPEG(buf.GetBytes())
-		buf.Close()
-	}
-
-	// start capturing
-	go mjpegCapture()
-
 	fmt.Println("Capturing. Point your browser to " + host)
 
 	// start http server
-	http.Handle("/", stream)
+	http.Handle("/mjpeg", stream)
+
+	go func() {
+		for {
+			if ok := webcam.Read(&img); !ok {
+				fmt.Printf("Bad read: %v\n", deviceID)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			if img.Empty() {
+				log.Println("Empty image")
+				continue
+			}
+
+			buf, _ := gocv.IMEncode(".jpg", img)
+			stream.UpdateJPEG(buf.GetBytes())
+			buf.Close()
+
+			time.Sleep(5 * time.Millisecond)
+		}
+	}()
+
 	log.Fatal(http.ListenAndServe(host, nil))
 }
 
-func mjpegCapture() {
-}
