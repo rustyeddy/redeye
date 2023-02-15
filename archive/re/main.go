@@ -4,8 +4,8 @@ import "log"
 
 func main() {
 
-	// camstr := jetsonCamstr()
-	camstr := "/dev/video0"
+	camstr := jetsonCamstr()
+	//camstr := "/dev/video0"
 	frameQ := streamVideo(camstr)
 	for true {
 		select {
