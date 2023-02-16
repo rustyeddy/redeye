@@ -1,4 +1,4 @@
-package streamer
+package redeye
 
 
 // What it does:
@@ -29,20 +29,20 @@ import (
 	"gocv.io/x/gocv"
 )
 
-var (
-	deviceID int
-	err      error
+type VideoPlayer struct {
+	DeviceID interface{}
 	webcam   *gocv.VideoCapture
 	stream   *mjpeg.Stream
-)
+}
 
-func jetsonCamstr(width int, height int, frame int, flip int) string {
+func JetsonCamstr(sensorId int, width int, height int, frame int, flip int) string {
 	w := strconv.Itoa(width)
 	h := strconv.Itoa(height)
 	f := strconv.Itoa(frame)
 	fl := strconv.Itoa(flip)
+	id := strconv.Itoa(sensorId)
 
-	str := "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=(int)" + string(w) + ", height=(int)" +
+	str := "nvarguscamerasrc sensor_id=" + string(id) + " ! video/x-raw(memory:NVMM), width=(int)" + string(w) + ", height=(int)" +
 		string(h) + ", framerate=(fraction)" + string(f) + "/1 ! nvvidconv flip-method=" +
 		string(fl) + " ! video/x-raw, width=(int)" + string(w) +
 		", height=(int)" + string(h) +
@@ -50,36 +50,24 @@ func jetsonCamstr(width int, height int, frame int, flip int) string {
 	return str
 }
 
-
-
-func streamer() {
-	// parse args
-	deviceID := jetsonCamstr(1280, 720, 30, 0)
-	host := ":1234"
-
-	// open webcam
-	webcam, err = gocv.OpenVideoCapture(deviceID)
-	if err != nil {
-		fmt.Printf("Error opening capture device: %v\n", deviceID)
-		return
-	}
-	defer webcam.Close()
-
-	// create the mjpeg stream
-	stream = mjpeg.NewStream()
-
-	img := gocv.NewMat()
-	defer img.Close()
-
-	fmt.Println("Capturing. Point your browser to " + host)
-
-	// start http server
-	http.Handle("/mjpeg", stream)
+func (vs *VideoPlayer) Stream() chan []byte {
+	vidQ := make(chan []byte)
 
 	go func() {
+		// open webcam
+		webcam, err := gocv.OpenVideoCapture(vs.DeviceID)
+		if err != nil {
+			fmt.Printf("Error opening capture device: %v\n", vs.DeviceID)
+			return 
+		}
+		defer webcam.Close()
+
+		img := gocv.NewMat()
+		defer img.Close()
+
 		for {
 			if ok := webcam.Read(&img); !ok {
-				fmt.Printf("Bad read:\n")
+				log.Printf("Bad read:\n")
 				time.Sleep(1 * time.Second)
 				continue
 			}
@@ -87,15 +75,38 @@ func streamer() {
 				log.Println("Empty image")
 				continue
 			}
-
-			buf, _ := gocv.IMEncode(".jpg", img)
-			stream.UpdateJPEG(buf.GetBytes())
-			buf.Close()
-
+			jpg, _ := gocv.IMEncode(".jpg", img)
+			vidQ <- jpg.GetBytes()
 			time.Sleep(5 * time.Millisecond)
+			jpg.Close()
+		}
+	} ()
+	return vidQ
+}
+
+func (vs *VideoPlayer) Play(vidQ chan []byte) {
+
+	// start http server
+	// create the mjpeg stream
+	stream := mjpeg.NewStream()
+	http.Handle("/mjpeg", stream)
+
+	
+	go func() {
+		for {
+			select {
+			case jpg := <- vidQ:
+				log.Println()
+				stream.UpdateJPEG(jpg)
+			}
 		}
 	}()
 
+	// parse args
+	// deviceID := jetsonCamstr(1280, 720, 30, 0)
+	host := ":1234"
+	fmt.Println("Capturing. Point your browser to " + host)
 	log.Fatal(http.ListenAndServe(host, nil))
 }
+
 
