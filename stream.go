@@ -21,7 +21,6 @@ import (
 	"net/http"
 	_ "os"
 	"time"
-	"strconv"
 
 	_ "net/http/pprof"
 
@@ -31,23 +30,9 @@ import (
 
 type VideoPlayer struct {
 	DeviceID interface{}
+	
 	webcam   *gocv.VideoCapture
 	stream   *mjpeg.Stream
-}
-
-func JetsonCamstr(sensorId int, width int, height int, frame int, flip int) string {
-	w := strconv.Itoa(width)
-	h := strconv.Itoa(height)
-	f := strconv.Itoa(frame)
-	fl := strconv.Itoa(flip)
-	id := strconv.Itoa(sensorId)
-
-	str := "nvarguscamerasrc sensor_id=" + string(id) + " ! video/x-raw(memory:NVMM), width=(int)" + string(w) + ", height=(int)" +
-		string(h) + ", framerate=(fraction)" + string(f) + "/1 ! nvvidconv flip-method=" +
-		string(fl) + " ! video/x-raw, width=(int)" + string(w) +
-		", height=(int)" + string(h) +
-		", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
-	return str
 }
 
 func (vs *VideoPlayer) Stream() chan []byte {
@@ -90,13 +75,11 @@ func (vs *VideoPlayer) Play(vidQ chan []byte) {
 	// create the mjpeg stream
 	stream := mjpeg.NewStream()
 	http.Handle("/mjpeg", stream)
-
 	
 	go func() {
 		for {
 			select {
 			case jpg := <- vidQ:
-				log.Println()
 				stream.UpdateJPEG(jpg)
 			}
 		}
