@@ -18,35 +18,28 @@ package redeye
 import (
 	"fmt"
 	"log"
-	"net/http"
-	_ "os"
 	"time"
 
-	_ "net/http/pprof"
-
-	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
 )
 
-type VideoPlayer struct {
-	DeviceID interface{}
-	
-	webcam   *gocv.VideoCapture
-	stream   *mjpeg.Stream
+type VideoStreamer interface{
+	Stream(deviceID interface{}, vidQ chan []byte)
 }
 
-func (vs *VideoPlayer) Stream() chan []byte {
-	vidQ := make(chan []byte)
+type GOCVStreamer struct {
+}
+
+func (st *GOCVStreamer) Stream(deviceID interface{}, vidQ chan []byte) {
 
 	go func() {
 		// open webcam
-		webcam, err := gocv.OpenVideoCapture(vs.DeviceID)
+		webcam, err := gocv.OpenVideoCapture(deviceID)
 		if err != nil {
-			fmt.Printf("Error opening capture device: %v\n", vs.DeviceID)
+			fmt.Printf("Error opening capture device: %v\n", deviceID)
 			return 
 		}
 		defer webcam.Close()
-
 		img := gocv.NewMat()
 		defer img.Close()
 
@@ -66,30 +59,4 @@ func (vs *VideoPlayer) Stream() chan []byte {
 			jpg.Close()
 		}
 	} ()
-	return vidQ
 }
-
-func (vs *VideoPlayer) Play(vidQ chan []byte) {
-
-	// start http server
-	// create the mjpeg stream
-	stream := mjpeg.NewStream()
-	http.Handle("/mjpeg", stream)
-	
-	go func() {
-		for {
-			select {
-			case jpg := <- vidQ:
-				stream.UpdateJPEG(jpg)
-			}
-		}
-	}()
-
-	// parse args
-	// deviceID := jetsonCamstr(1280, 720, 30, 0)
-	host := ":1234"
-	fmt.Println("Capturing. Point your browser to " + host)
-	log.Fatal(http.ListenAndServe(host, nil))
-}
-
-
