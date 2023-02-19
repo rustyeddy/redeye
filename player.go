@@ -1,6 +1,8 @@
 package redeye
 
 import (
+	"fmt"
+
 	"github.com/hybridgroup/mjpeg"
 )
 
