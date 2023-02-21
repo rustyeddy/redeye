@@ -2,7 +2,6 @@ package redeye
 
 import (
 	"log"
-	
 	"net/http"
 )
 

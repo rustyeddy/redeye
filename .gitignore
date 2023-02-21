@@ -14,7 +14,7 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 *~
-redeye
+redeye/redeye
 __debug_bin
 re/re
 cam/cam
