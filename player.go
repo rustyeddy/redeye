@@ -9,24 +9,25 @@ type VideoPlayer interface {
 }
 
 type MJPEGPlayer struct {
-	VidQ chan []byte
 	*mjpeg.Stream
 }
 
 func NewMJPEGPlayer() *MJPEGPlayer {
 	return &MJPEGPlayer{
 		Stream: mjpeg.NewStream(),
-		VidQ: make(chan []byte),
 	}
 }
 
-func (player *MJPEGPlayer) Play() {
+func (player *MJPEGPlayer) Play() chan []byte {
+	vidQ := make(chan []byte)
+
 	go func() {
 		for {
 			select {
-			case jpg := <- player.VidQ:
+			case jpg := <- vidQ:
 				player.Stream.UpdateJPEG(jpg)
 			}
 		}
 	}()
+	return vidQ
 }
