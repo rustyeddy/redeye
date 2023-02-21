@@ -52,6 +52,9 @@ func main() {
 		// create the channel to pump video from the capture device
 		// to the MJPEG player
 		vidQ := mjpg.Play()
+
+		cap.Pipeline.AddFilters(ocv.NullFilter{})
+
 		cap.Stream(vidQ)
 		log.Println("Streaming video at ", host, url)
 	}

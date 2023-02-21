@@ -25,7 +25,9 @@ import (
 )
 
 type CaptureDevice struct {
-	DeviceID			interface{}
+	DeviceID	interface{}
+	Pipeline	*Pipeline
+
 	*gocv.VideoCapture
 }
 
