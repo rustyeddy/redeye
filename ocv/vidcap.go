@@ -35,17 +35,6 @@ func GetCaptureDevice(devstr string) *CaptureDevice {
 		DeviceID: devstr,
 	}
 
-	if devnum, err := strconv.Atoi(devstr); err != nil {
-		cap, err := gocv.OpenVideoCapture(devnum)
-		if err != nil {
-			log.Printf("Error opening RTSP: %v\n", devstr)
-			return nil
-		}
-
-		capdev.VideoCapture = cap
-		return capdev
-	}
-
 	if strings.HasPrefix(devstr, "rtsp:") {
 		cap, err := gocv.OpenVideoCaptureWithAPI(devstr, gocv.VideoCaptureFFmpeg)
 		if err != nil {
@@ -64,19 +53,18 @@ func GetCaptureDevice(devstr string) *CaptureDevice {
 			log.Printf("Error opening capture device: %v\n", devstr)
 			return nil
 		}
-		devid, err := strconv.Atoi(strs[1])
+		_, err := strconv.Atoi(strs[1])
 		if err != nil {
-			log.Printf("Error bad device ID: %v\n", devid)
+			log.Printf("Error bad device ID: %v\n", strs[1])
 			return nil
 		}
 
-		jetstr := JetsonCamstr(devid, 1280, 720, 30, 0)
+		jetstr := JetsonCamstr(strs[1], 1280, 720, 30, 0)
 		cap, err := gocv.OpenVideoCapture(jetstr)
 		if err != nil {
 			log.Printf("Error opening capture device: %v\n", devstr)
 			return nil
 		}
-
 		capdev.VideoCapture = cap
 		return capdev
 	}
@@ -109,14 +97,13 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 	}()
 }
 
-func JetsonCamstr(sensorId int, width int, height int, frame int, flip int) string {
+func JetsonCamstr(sensorId string, width int, height int, frame int, flip int) string {
 	w := strconv.Itoa(width)
 	h := strconv.Itoa(height)
 	f := strconv.Itoa(frame)
 	fl := strconv.Itoa(flip)
-	id := strconv.Itoa(sensorId)
 
-	str := "nvarguscamerasrc sensor_id=" + string(id) + " ! video/x-raw(memory:NVMM), width=(int)" + string(w) + ", height=(int)" +
+	str := "nvarguscamerasrc sensor_id=" + sensorId + " ! video/x-raw(memory:NVMM), width=(int)" + string(w) + ", height=(int)" +
 		string(h) + ", framerate=(fraction)" + string(f) + "/1 ! nvvidconv flip-method=" +
 		string(fl) + " ! video/x-raw, width=(int)" + string(w) +
 		", height=(int)" + string(h) +
