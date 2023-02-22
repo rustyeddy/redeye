@@ -1,6 +1,5 @@
 package ocv
 
-
 // What it does:
 //
 // This example opens a video capture device, then streams MJPEG from it.
@@ -25,75 +24,64 @@ import (
 )
 
 type CaptureDevice struct {
-	DeviceID	interface{}
-	Pipeline	*Pipeline
+	DeviceID interface{}
+	Pipeline *Pipeline
 
 	*gocv.VideoCapture
 }
 
-func GetCaptureDevice(deviceID interface{}) *CaptureDevice {
+func GetCaptureDevice(devstr string) *CaptureDevice {
 	capdev := &CaptureDevice{
-		DeviceID: deviceID,
+		DeviceID: devstr,
 	}
 
-	switch deviceID.(type) {
-	case string:
-		devstr := deviceID.(string)
-
-		if strings.HasPrefix(devstr, "rtsp:") {
-			cap, err := gocv.OpenVideoCaptureWithAPI(devstr, gocv.VideoCaptureFFmpeg)
-			if err != nil {
-				log.Printf("Error opening RTSP: %v\n", devstr)
-				return nil
-			}
-
-			capdev.VideoCapture = cap
-			return capdev
-		}
-
-		if strings.HasPrefix(devstr, "jetson:") {
-
-			strs := strings.Split(devstr, ":")
-			if len(strs) < 2 {
-				log.Printf("Error opening capture device: %v\n", devstr)
-				return nil
-			}
-			devid, err := strconv.Atoi(strs[1])
-			if err != nil {
-				log.Printf("Error bad device ID: %v\n", devid)
-				return nil
-			}
-
-			jetstr := JetsonCamstr(devid, 1280, 720, 30, 0)
-			log.Println("JETSTR: ", jetstr)
-
-			cap, err := gocv.OpenVideoCapture(jetstr)
-			if err != nil {
-				log.Printf("Error opening capture device: %v\n", deviceID)
-				return nil
-			}
-
-			capdev.VideoCapture = cap
-			return capdev
-		}
-		
-		log.Printf("Uknown deviceID: ", devstr)
-		return nil
-
-	case int:
-		devid := deviceID.(int)
-		cap, err := gocv.OpenVideoCapture(devid)
+	if devnum, err := strconv.Atoi(devstr); err != nil {
+		cap, err := gocv.OpenVideoCapture(devnum)
 		if err != nil {
-			log.Printf("Error opening capture device: %v\n", deviceID)
-			return nil 
+			log.Printf("Error opening RTSP: %v\n", devstr)
+			return nil
 		}
 
 		capdev.VideoCapture = cap
 		return capdev
-
-	default:
-		log.Println("ERROR - unknown device type %+v\n", deviceID)
 	}
+
+	if strings.HasPrefix(devstr, "rtsp:") {
+		cap, err := gocv.OpenVideoCaptureWithAPI(devstr, gocv.VideoCaptureFFmpeg)
+		if err != nil {
+			log.Printf("Error opening RTSP: %v\n", devstr)
+			return nil
+		}
+
+		capdev.VideoCapture = cap
+		return capdev
+	}
+
+	if strings.HasPrefix(devstr, "jetson:") {
+
+		strs := strings.Split(devstr, ":")
+		if len(strs) < 2 {
+			log.Printf("Error opening capture device: %v\n", devstr)
+			return nil
+		}
+		devid, err := strconv.Atoi(strs[1])
+		if err != nil {
+			log.Printf("Error bad device ID: %v\n", devid)
+			return nil
+		}
+
+		jetstr := JetsonCamstr(devid, 1280, 720, 30, 0)
+		cap, err := gocv.OpenVideoCapture(jetstr)
+		if err != nil {
+			log.Printf("Error opening capture device: %v\n", devstr)
+			return nil
+		}
+
+		capdev.VideoCapture = cap
+		return capdev
+	}
+
+	log.Printf("Uknown deviceID: %s", devstr)
 	return nil
 }
 
@@ -118,7 +106,7 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 			time.Sleep(5 * time.Millisecond)
 			jpg.Close()
 		}
-	} ()
+	}()
 }
 
 func JetsonCamstr(sensorId int, width int, height int, frame int, flip int) string {
@@ -132,6 +120,6 @@ func JetsonCamstr(sensorId int, width int, height int, frame int, flip int) stri
 		string(h) + ", framerate=(fraction)" + string(f) + "/1 ! nvvidconv flip-method=" +
 		string(fl) + " ! video/x-raw, width=(int)" + string(w) +
 		", height=(int)" + string(h) +
-		", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
+		", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
 	return str
 }

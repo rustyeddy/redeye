@@ -1,12 +1,10 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"log"
-	"os"
-
 	"net/http"
+	"os"
 
 	"github.com/rustyeddy/redeye"
 	"github.com/rustyeddy/redeye/ocv"
@@ -16,8 +14,8 @@ type Config struct {
 	Device interface{}
 }
 
-//go:embed index.html
-var content embed.FS
+// go:embed index.html
+// var content embed.FS
 
 func main() {
 
@@ -28,7 +26,8 @@ func main() {
 
 	host := ":1234"
 	srv := redeye.NewWebServer(host)
-	srv.Handle("/", http.FileServer(http.FS(content)))
+
+	srv.Handle("/", http.FileServer(http.Dir("./html")))
 
 	devnum := 0
 	var capdevs []*ocv.CaptureDevice
@@ -47,7 +46,7 @@ func main() {
 		url := fmt.Sprintf("/mjpeg/%d", devnum)
 		srv.ServeMux.Handle(url, mjpg.Stream)
 		devnum++
-		log.Printf("Capture device: %v\n",cap.DeviceID)
+		log.Printf("Capture device: %v\n", cap.DeviceID)
 
 		// create the channel to pump video from the capture device
 		// to the MJPEG player
@@ -61,4 +60,3 @@ func main() {
 
 	srv.Listen()
 }
-
