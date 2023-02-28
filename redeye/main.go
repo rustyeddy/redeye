@@ -24,9 +24,9 @@ func main() {
 		return
 	}
 
+	// Move HTML to web
 	host := ":1234"
 	srv := redeye.NewWebServer(host)
-
 	srv.Handle("/", http.FileServer(http.Dir("./html")))
 
 	devnum := 0
@@ -40,6 +40,7 @@ func main() {
 			os.Exit(1)
 		}
 		capdevs = append(capdevs, cap)
+		cap.Filter = ocv.NullFilter{}
 
 		// Open the MJPEG player and register with the http server
 		mjpg := redeye.NewMJPEGPlayer()
@@ -51,10 +52,8 @@ func main() {
 		// create the channel to pump video from the capture device
 		// to the MJPEG player
 		vidQ := mjpg.Play()
-
-		cap.Pipeline.AddFilters(ocv.NullFilter{})
-
 		cap.Stream(vidQ)
+
 		log.Println("Streaming video at ", host, url)
 	}
 

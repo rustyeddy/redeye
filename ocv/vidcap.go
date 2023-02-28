@@ -25,9 +25,9 @@ import (
 
 type CaptureDevice struct {
 	DeviceID interface{}
-	Pipeline *Pipeline
-
 	*gocv.VideoCapture
+
+	Filter
 }
 
 func GetCaptureDevice(devstr string) *CaptureDevice {
@@ -69,6 +69,18 @@ func GetCaptureDevice(devstr string) *CaptureDevice {
 		return capdev
 	}
 
+	if devnum, err := strconv.Atoi(devstr); err == nil {
+		cap, err := gocv.OpenVideoCapture(devnum)
+		if err != nil {
+			log.Printf("Error opening capture device: %v\n", devstr)
+			return nil
+		}
+		capdev.VideoCapture = cap
+		return capdev
+	} else {
+		log.Printf("ERROR: opening devnum: %d", devnum)
+	}
+
 	log.Printf("Uknown deviceID: %s", devstr)
 	return nil
 }
@@ -79,6 +91,8 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 		img := gocv.NewMat()
 		defer img.Close()
 
+		imgQ := make(chan *gocv.Mat)
+		fltQ := vc.Process(imgQ)
 		for {
 			if ok := vc.VideoCapture.Read(&img); !ok {
 				log.Printf("Bad read:\n")
@@ -89,8 +103,13 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 				log.Println("Empty image")
 				continue
 			}
-			jpg, _ := gocv.IMEncode(".jpg", img)
+
+			fltQ <- &img
+			img := <-imgQ
+
+			jpg, _ := gocv.IMEncode(".jpg", *img)
 			vidQ <- jpg.GetBytes()
+
 			time.Sleep(5 * time.Millisecond)
 			jpg.Close()
 		}
