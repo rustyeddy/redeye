@@ -23,15 +23,15 @@ import (
 	"gocv.io/x/gocv"
 )
 
-type CaptureDevice struct {
+type VideoSource struct {
 	DeviceID interface{}
 	*gocv.VideoCapture
 
 	Filter
 }
 
-func GetCaptureDevice(devstr string) *CaptureDevice {
-	capdev := &CaptureDevice{
+func GetVideoSource(devstr string) *VideoSource {
+	capdev := &VideoSource{
 		DeviceID: devstr,
 	}
 
@@ -85,14 +85,17 @@ func GetCaptureDevice(devstr string) *CaptureDevice {
 	return nil
 }
 
-func (vc *CaptureDevice) Stream(vidQ chan []byte) {
+func (vc *VideoSource) Play() (vidQ chan []byte) {
 
+	vidQ = make(chan []byte)
 	go func() {
+		imgQ := make(chan *gocv.Mat)
+		defer close(imgQ)
+
 		img := gocv.NewMat()
 		defer img.Close()
 
-		imgQ := make(chan *gocv.Mat)
-		fltQ := vc.Process(imgQ)
+		// fltQ := vc.Process(imgQ)
 		for {
 			if ok := vc.VideoCapture.Read(&img); !ok {
 				log.Printf("Bad read:\n")
@@ -104,7 +107,7 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 				continue
 			}
 
-			fltQ <- &img
+			// fltQ <- &img
 			img := <-imgQ
 
 			jpg, _ := gocv.IMEncode(".jpg", *img)
@@ -114,6 +117,7 @@ func (vc *CaptureDevice) Stream(vidQ chan []byte) {
 			jpg.Close()
 		}
 	}()
+	return vidQ
 }
 
 func JetsonCamstr(sensorId string, width int, height int, frame int, flip int) string {

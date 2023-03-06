@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -11,51 +11,58 @@ import (
 )
 
 type Config struct {
+	Addr   string
+	Filter string
 	Device interface{}
+}
+
+var config Config
+
+func init() {
+	flag.StringVar(&config.Addr, "addr", ":1234", "Listent to address")
+	flag.StringVar(&config.Filter, "filter", "", "Filter to apply")
 }
 
 // go:embed index.html
 // var content embed.FS
 
 func main() {
+	flag.Parse()
 
-	if len(os.Args) < 2 {
+	srv := redeye.NewWebServer(config.Addr)
+	srv.Handle("/", http.FileServer(http.Dir("./html")))
+
+	if len(os.Args) < 1 {
 		log.Println("No video capture devices specified")
 		return
 	}
 
-	// Move HTML to web
-	host := ":1234"
-	srv := redeye.NewWebServer(host)
-	srv.Handle("/", http.FileServer(http.Dir("./html")))
+	vidsrcs := getVideoSrcs(os.Args[1:])
+	for i, vsrc := range vidsrcs {
+		mjpg := redeye.NewMJPEGPlayer(i)
+		srv.ServeMux.Handle(mjpg.GetURL(), mjpg)
+
+		imgQ := vsrc.Play()
+		mjpg.Play(imgQ)
+
+	}
+	srv.Listen()
+}
+
+func getVideoSrcs(args []string) []*VideoSource {
 
 	devnum := 0
 	var capdevs []*ocv.CaptureDevice
 	for _, capstr := range os.Args[1:] {
 
 		// Open up the video capture device
-		cap := ocv.GetCaptureDevice(capstr)
+		cap := ocv.GetVideoSource(capstr)
 		if cap == nil {
 			log.Println("Failed to get capture device", capstr)
 			os.Exit(1)
 		}
 		capdevs = append(capdevs, cap)
-		cap.Filter = ocv.NullFilter{}
-
-		// Open the MJPEG player and register with the http server
-		mjpg := redeye.NewMJPEGPlayer()
-		url := fmt.Sprintf("/mjpeg/%d", devnum)
-		srv.ServeMux.Handle(url, mjpg.Stream)
-		devnum++
-		log.Printf("Capture device: %v\n", cap.DeviceID)
-
-		// create the channel to pump video from the capture device
-		// to the MJPEG player
-		vidQ := mjpg.Play()
-		cap.Stream(vidQ)
-
-		log.Println("Streaming video at ", host, url)
 	}
+	return capdevs
 
-	srv.Listen()
 }
