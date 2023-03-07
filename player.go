@@ -1,6 +1,8 @@
 package redeye
 
 import (
+	"fmt"
+
 	"github.com/hybridgroup/mjpeg"
 )
 
@@ -9,25 +11,28 @@ type VideoPlayer interface {
 }
 
 type MJPEGPlayer struct {
+	Device int
 	*mjpeg.Stream
 }
 
-func NewMJPEGPlayer() *MJPEGPlayer {
+func NewMJPEGPlayer(dev int) *MJPEGPlayer {
 	return &MJPEGPlayer{
+		Device: dev,
 		Stream: mjpeg.NewStream(),
 	}
 }
 
-func (player *MJPEGPlayer) Play() chan []byte {
-	vidQ := make(chan []byte)
+func (player *MJPEGPlayer) URL() string {
+	return fmt.Sprintf("/video/%d", player.Device)
+}
 
+func (player *MJPEGPlayer) Play(vidQ chan []byte) {
 	go func() {
 		for {
 			select {
-			case jpg := <- vidQ:
+			case jpg := <-vidQ:
 				player.Stream.UpdateJPEG(jpg)
 			}
 		}
 	}()
-	return vidQ
 }

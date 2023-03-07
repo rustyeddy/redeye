@@ -26,8 +26,6 @@ import (
 type VideoSource struct {
 	DeviceID interface{}
 	*gocv.VideoCapture
-
-	Filter
 }
 
 func GetVideoSource(devstr string) *VideoSource {
@@ -89,8 +87,6 @@ func (vc *VideoSource) Play() (vidQ chan []byte) {
 
 	vidQ = make(chan []byte)
 	go func() {
-		imgQ := make(chan *gocv.Mat)
-		defer close(imgQ)
 
 		img := gocv.NewMat()
 		defer img.Close()
@@ -102,15 +98,16 @@ func (vc *VideoSource) Play() (vidQ chan []byte) {
 				time.Sleep(1 * time.Second)
 				continue
 			}
+
 			if img.Empty() {
 				log.Println("Empty image")
 				continue
 			}
 
 			// fltQ <- &img
-			img := <-imgQ
+			// imgQ <- img
 
-			jpg, _ := gocv.IMEncode(".jpg", *img)
+			jpg, _ := gocv.IMEncode(".jpg", img)
 			vidQ <- jpg.GetBytes()
 
 			time.Sleep(5 * time.Millisecond)

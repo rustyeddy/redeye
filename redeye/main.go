@@ -40,7 +40,7 @@ func main() {
 	vidsrcs := getVideoSrcs(os.Args[1:])
 	for i, vsrc := range vidsrcs {
 		mjpg := redeye.NewMJPEGPlayer(i)
-		srv.ServeMux.Handle(mjpg.GetURL(), mjpg)
+		srv.Handle(mjpg.URL(), mjpg)
 
 		imgQ := vsrc.Play()
 		mjpg.Play(imgQ)
@@ -49,10 +49,9 @@ func main() {
 	srv.Listen()
 }
 
-func getVideoSrcs(args []string) []*VideoSource {
+func getVideoSrcs(args []string) []*ocv.VideoSource {
 
-	devnum := 0
-	var capdevs []*ocv.CaptureDevice
+	var capdevs []*ocv.VideoSource
 	for _, capstr := range os.Args[1:] {
 
 		// Open up the video capture device
@@ -61,6 +60,9 @@ func getVideoSrcs(args []string) []*VideoSource {
 			log.Println("Failed to get capture device", capstr)
 			os.Exit(1)
 		}
+
+		cap.AddFilter(GetFilter("Null"))
+
 		capdevs = append(capdevs, cap)
 	}
 	return capdevs
