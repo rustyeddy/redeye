@@ -104,13 +104,12 @@ func (vc *VideoSource) Play() (vidQ chan []byte) {
 				continue
 			}
 
-			// fltQ <- &img
-			// imgQ <- img
+			resizeFilter(&img)
 
 			jpg, _ := gocv.IMEncode(".jpg", img)
 			vidQ <- jpg.GetBytes()
 
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 			jpg.Close()
 		}
 	}()

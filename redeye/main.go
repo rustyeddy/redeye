@@ -61,8 +61,7 @@ func getVideoSrcs(args []string) []*ocv.VideoSource {
 			os.Exit(1)
 		}
 
-		cap.AddFilter(GetFilter("Null"))
-
+		// cap.AddFilter(GetPipeline("Null"))
 		capdevs = append(capdevs, cap)
 	}
 	return capdevs
