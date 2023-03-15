@@ -26,6 +26,8 @@ import (
 type VideoSource struct {
 	DeviceID interface{}
 	*gocv.VideoCapture
+
+	Pipeline
 }
 
 func GetVideoSource(devstr string) *VideoSource {
@@ -83,6 +85,11 @@ func GetVideoSource(devstr string) *VideoSource {
 	return nil
 }
 
+func (vc *VideoSource) AddPipeline(p Pipeline) {
+	log.Println("Adding pipeline")
+	vc.Pipeline = p
+}
+
 func (vc *VideoSource) Play() (vidQ chan []byte) {
 
 	vidQ = make(chan []byte)
@@ -92,7 +99,6 @@ func (vc *VideoSource) Play() (vidQ chan []byte) {
 		defer img.Close()
 
 		for {
-			img := gocv.NewMat()
 			if ok := vc.VideoCapture.Read(&img); !ok {
 				log.Printf("Bad read:\n")
 				time.Sleep(1 * time.Second)
@@ -104,9 +110,13 @@ func (vc *VideoSource) Play() (vidQ chan []byte) {
 				continue
 			}
 
-			resizeFilter(&img)
+			nimg := &img
+			if vc.Pipeline != nil {
+				log.Println("We have a pipeline")
+				nimg = vc.Filter(&img)
+			}
 
-			jpg, _ := gocv.IMEncode(".jpg", img)
+			jpg, _ := gocv.IMEncode(".jpg", *nimg)
 			vidQ <- jpg.GetBytes()
 
 			time.Sleep(1 * time.Millisecond)

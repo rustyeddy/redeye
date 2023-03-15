@@ -6,12 +6,13 @@ import (
 	"gocv.io/x/gocv"
 )
 
-// func resizeFilter(img *gocv.Mat) *gocv.Mat {
-// 	gocv.Resize(*img, img, image.Point{}, 20.0, 20.0, 1)
-// 	// image.Point{X: 400, Y: int(newY)},
-// 	return img
-// }
+type Resize struct {
+	X      float64
+	Y      float64
+	Interp int
+}
 
-func resizeFilter(img *gocv.Mat) {
-	gocv.Resize(*img, img, image.Point{}, 6.0, 6.0, 3)
+func (flt Resize) Filter(img *gocv.Mat) *gocv.Mat {
+	gocv.Resize(*img, img, image.Point{}, flt.X, flt.Y, 3)
+	return img
 }

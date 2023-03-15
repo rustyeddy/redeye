@@ -10,16 +10,16 @@ import (
 )
 
 type Config struct {
-	Addr   string
-	Filter string
-	Device interface{}
+	Addr     string
+	Pipeline string
+	Device   interface{}
 }
 
 var config Config
 
 func init() {
 	flag.StringVar(&config.Addr, "addr", ":1234", "Listent to address")
-	flag.StringVar(&config.Filter, "filter", "", "Filter to apply")
+	flag.StringVar(&config.Pipeline, "pipeline", "", "Pipeline to apply")
 }
 
 // go:embed index.html
@@ -59,8 +59,9 @@ func getVideoSrcs(args []string) []*redeye.VideoSource {
 			os.Exit(1)
 		}
 
-		// cap.AddFilter(GetPipeline("Null"))
-		capdevs = append(capdevs, cap)
+		if config.Pipeline != "" {
+			log.Println("Looking up pipcap")
+		}
 	}
 	return capdevs
 
