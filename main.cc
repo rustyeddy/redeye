@@ -1,22 +1,54 @@
-#include <stdio.h>
 #include <opencv2/opencv.hpp>
-using namespace cv;
-int main(int argc, char** argv )
+
+std::string gstreamer_pipeline (int id, int capture_width, int capture_height, int display_width, int display_height, int framerate, int flip_method) {
+    return "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM), width=(int)" + std::to_string(capture_width) + ", height=(int)" +
+           std::to_string(capture_height) + ", framerate=(fraction)" + std::to_string(framerate) +
+           "/1 ! nvvidconv flip-method=" + std::to_string(flip_method) + " ! video/x-raw, width=(int)" + std::to_string(display_width) + ", height=(int)" +
+           std::to_string(display_height) + ", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
+}
+
+int main()
 {
-    if ( argc != 2 )
-    {
-        printf("usage: DisplayImage.out <Image_Path>\n");
-        return -1;
+    int capture_width = 1280 ;
+    int capture_height = 720 ;
+    int display_width = 1280 ;
+    int display_height = 720 ;
+    int framerate = 30 ;
+    int flip_method = 0 ;
+
+    std::string pipeline = gstreamer_pipeline(1,
+        capture_width,
+	capture_height,
+	display_width,
+	display_height,
+	framerate,
+	flip_method);
+    std::cout << "Using pipeline: \n\t" << pipeline << "\n";
+ 
+    cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
+    if(!cap.isOpened()) {
+	std::cout<<"Failed to open camera."<<std::endl;
+	return (-1);
     }
-    Mat image;
-    image = imread( argv[1], IMREAD_COLOR );
-    if ( !image.data )
+
+    cv::namedWindow("CSI Camera", cv::WINDOW_AUTOSIZE);
+    cv::Mat img;
+
+    std::cout << "Hit ESC to exit" << "\n" ;
+    while(true)
     {
-        printf("No image data \n");
-        return -1;
+    	if (!cap.read(img)) {
+		std::cout<<"Capture read error"<<std::endl;
+		break;
+	}
+	
+	cv::imshow("CSI Camera",img);
+	int keycode = cv::waitKey(10) & 0xff ; 
+        if (keycode == 27) break ;
     }
-    namedWindow("Display Image", WINDOW_AUTOSIZE );
-    imshow("Display Image", image);
-    waitKey(0);
+
+    cap.release();
+    cv::destroyAllWindows() ;
     return 0;
 }
+
