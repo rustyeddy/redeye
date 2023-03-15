@@ -6,19 +6,18 @@ import (
 )
 
 type WebServer struct {
-	Addr	string
+	Addr string
 	*http.ServeMux
 }
 
 func NewWebServer(addr string) *WebServer {
 	return &WebServer{
-		Addr: addr,
+		Addr:     addr,
 		ServeMux: http.NewServeMux(),
 	}
 }
 
 func (srv *WebServer) Listen() {
 	log.Println("Capturing. Point your browser to " + srv.Addr)
-	log.Fatal(http.ListenAndServe(srv.Addr, srv.ServeMux))	
+	log.Fatal(http.ListenAndServe(srv.Addr, srv.ServeMux))
 }
-

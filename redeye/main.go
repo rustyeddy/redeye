@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/rustyeddy/redeye"
-	"github.com/rustyeddy/redeye/ocv"
 )
 
 type Config struct {
@@ -44,18 +43,17 @@ func main() {
 
 		imgQ := vsrc.Play()
 		mjpg.Play(imgQ)
-
 	}
 	srv.Listen()
 }
 
-func getVideoSrcs(args []string) []*ocv.VideoSource {
+func getVideoSrcs(args []string) []*redeye.VideoSource {
 
-	var capdevs []*ocv.VideoSource
+	var capdevs []*redeye.VideoSource
 	for _, capstr := range os.Args[1:] {
 
 		// Open up the video capture device
-		cap := ocv.GetVideoSource(capstr)
+		cap := redeye.GetVideoSource(capstr)
 		if cap == nil {
 			log.Println("Failed to get capture device", capstr)
 			os.Exit(1)

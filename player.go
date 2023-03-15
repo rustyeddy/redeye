@@ -2,6 +2,7 @@ package redeye
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/hybridgroup/mjpeg"
 )
@@ -31,6 +32,11 @@ func (player *MJPEGPlayer) Play(vidQ chan []byte) {
 		for {
 			select {
 			case jpg := <-vidQ:
+
+				if jpg == nil || len(jpg) == 0 {
+					log.Println("We have an empty jpg frame")
+					continue
+				}
 				player.Stream.UpdateJPEG(jpg)
 			}
 		}

@@ -1,4 +1,4 @@
-package ocv
+package redeye
 
 import (
 	"embed"
