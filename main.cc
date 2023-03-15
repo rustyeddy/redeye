@@ -1,30 +1,14 @@
 #include <opencv2/opencv.hpp>
 
-std::string gstreamer_pipeline (int id, int capture_width, int capture_height, int display_width, int display_height, int framerate, int flip_method) {
-    return "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM), width=(int)" + std::to_string(capture_width) + ", height=(int)" +
-           std::to_string(capture_height) + ", framerate=(fraction)" + std::to_string(framerate) +
-           "/1 ! nvvidconv flip-method=" + std::to_string(flip_method) + " ! video/x-raw, width=(int)" + std::to_string(display_width) + ", height=(int)" +
-           std::to_string(display_height) + ", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
-}
+#include "jetson.hh"
 
-int main()
+int main(int argc, char *argv[], char *envp[])
 {
-    int capture_width = 1280 ;
-    int capture_height = 720 ;
-    int display_width = 1280 ;
-    int display_height = 720 ;
-    int framerate = 30 ;
-    int flip_method = 0 ;
+    Jetson jetson;
 
-    std::string pipeline = gstreamer_pipeline(1,
-        capture_width,
-	capture_height,
-	display_width,
-	display_height,
-	framerate,
-	flip_method);
+    std::string pipeline = jetson.gstreamer_pipeline();
     std::cout << "Using pipeline: \n\t" << pipeline << "\n";
- 
+
     cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
     if(!cap.isOpened()) {
 	std::cout<<"Failed to open camera."<<std::endl;
