@@ -82,6 +82,7 @@ void *web_start(void *p)
         return NULL;
     }
     
-    svr.listen("0.0.0.0", 8000);
+    cerr << "Listing to port 8000" << endl;
+    svr.listen("0.0.0.0", config->get_web_port());
     return NULL;
 }

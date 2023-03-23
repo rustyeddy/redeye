@@ -20,7 +20,7 @@ private:
     int         _mjpg_port      = 1234;
     string      _video_name     = "";
     string      _video_uri      = "/video0";
-    int         _web_port       = 80;
+    int         _web_port       = 8000;
 
 public:
     Config( int argc, char *argv[], char *envp[] );
