@@ -5,6 +5,6 @@
 class FltResize : public Filter
 {
 public:
-    FltResize() : Filter("magnify") {}
+    FltResize() : Filter("resize") {}
     Mat* filter(Mat* iframe);
 };

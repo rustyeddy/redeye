@@ -3,7 +3,7 @@
 #include "filter_bigger.hh"
 #include "filter_contour.hh"
 #include "filter_face_detect.hh"
-#include "filter_magnify.hh"
+#include "filter_resize.hh"
 
 #include "filters.hh"
 
