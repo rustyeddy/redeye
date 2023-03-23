@@ -1,9 +1,22 @@
 cmake_minimum_required(VERSION 3.2)
 
 project( redeye )
-add_executable( redeye main.cc )
+set(CMAKE_CXX_FLAGS "-std=c++17")
 
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+include(ExternalProject)
 
-target_link_libraries( redeye ${OpenCV_LIBS} )
+ExternalProject_Add(mjpeg-streamer
+        GIT_REPOSITORY  git@github.com:nadjieb/cpp-mjpeg-streamer
+        TEST_COMMAND    ""
+)
+
+ExternalProject_Add(cpp-httplib
+        GIT_REPOSITORY  git@github.com:yhirose/cpp-httplib
+        TEST_COMMAND    ""
+)
+
+
+add_subdirectory(src)
+
+
+
