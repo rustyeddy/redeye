@@ -12,7 +12,7 @@ FltFilters::FltFilters() {
     add( "bigger", new FltBigger() );
     add( "contour", new FltContour() ); 
     add( "canny", new FltCanny() );
-    add( "face-detect", new FltHaarCascade() );
+//    add( "face-detect", new FltHaarCascade() );
     add( "gaussian", new FltGaussianBlur() );
     add( "smaller", new FltSmaller() );
     add( "resize", new FltResize() );
