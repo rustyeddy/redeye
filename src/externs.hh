@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "filters/filters.hh"
+#include "filters.hh"
 #include "player.hh"
 #include "video.hh"
 

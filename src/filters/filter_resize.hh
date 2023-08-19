@@ -1,6 +1,6 @@
 #pragma once
 
-#include "filter.hh"
+#include "../filter.hh"
 
 class FltResize : public Filter
 {

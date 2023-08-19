@@ -1,4 +1,4 @@
-#include "filter.hh"
+#include "../filter.hh"
 #include "filter_default.hh"
 
 cv::Mat* FltGaussianBlur::filter(cv::Mat* img)

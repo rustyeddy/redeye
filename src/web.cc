@@ -5,7 +5,7 @@
 #include <nadjieb/mjpeg_streamer.hpp>
 #include <nlohmann/json.hpp>
 
-#include "filters/filters.hh"
+#include "filters.hh"
 
 #include "config.hh"
 #include "player.hh"

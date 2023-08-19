@@ -6,7 +6,7 @@
 #include <opencv2/videoio.hpp>
 #include <iostream>
 
-#include "filter.hh"
+#include "../filter.hh"
 
 using namespace std;
 

@@ -1,8 +1,8 @@
 #include <unistd.h>
 
 #include "config.hh"
-#include "filters/filter.hh"
-#include "filters/filters.hh"
+#include "filter.hh"
+#include "filters.hh"
 #include "video.hh"
 
 Config::Config( int argc, char *argv[], char *envp[ ] )

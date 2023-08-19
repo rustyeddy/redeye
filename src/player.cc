@@ -6,7 +6,7 @@
 
 #include "config.hh"
 #include "externs.hh"
-#include "filters/filter.hh"
+#include "filter.hh"
 #include "mqtt.hh"
 #include "player.hh"
 

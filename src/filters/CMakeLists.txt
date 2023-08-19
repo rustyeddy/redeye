@@ -4,14 +4,12 @@ project( filters )
 
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-add_library( Filters filters
-	filter.cc
+add_library( Filters
 	filter_bigger.cc
 	filter_contour.cc
 	filter_default.cc
-
+	# filter_face_detect.cc
 	filter_resize.cc
-	filters.cc
 )
 
 set(CMAKE_BUILD_TYPE Debug)

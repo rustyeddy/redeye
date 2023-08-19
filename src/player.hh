@@ -6,7 +6,7 @@
 #include "nadjieb/mjpeg_streamer.hpp"
 
 #include <opencv2/opencv.hpp>
-#include "filters/filter.hh"
+#include "filter.hh"
 #include "video.hh"
 
 using namespace std;

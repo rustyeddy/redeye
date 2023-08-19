@@ -1,6 +1,6 @@
 #include <opencv2/opencv.hpp>
 
-#include "filter.hh"
+#include "../filter.hh"
 #include "filter_resize.hh"
 
 cv::Mat* FltResize::filter(cv::Mat* img)

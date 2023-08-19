@@ -1,9 +1,9 @@
 #include "filter.hh"
-#include "filter_default.hh"
-#include "filter_bigger.hh"
-#include "filter_contour.hh"
-#include "filter_face_detect.hh"
-#include "filter_resize.hh"
+#include "filters/filter_default.hh"
+#include "filters/filter_bigger.hh"
+#include "filters/filter_contour.hh"
+#include "filters/filter_face_detect.hh"
+#include "filters/filter_resize.hh"
 
 #include "filters.hh"
 

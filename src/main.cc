@@ -10,7 +10,7 @@
 #include "video.hh"
 #include "web.hh"
 
-#include "filters/filter.hh"
+#include "filter.hh"
 
 Config*         config  = NULL;
 Player*         player  = NULL;

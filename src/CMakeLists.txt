@@ -8,6 +8,8 @@ add_executable( redeye
                 buffers.cc
                 config.cc
                 cmd.cc
+                filter.cc
+                filters.cc
                 image.cc
                 main.cc
                 mqtt.cc

@@ -1,6 +1,6 @@
 #include <opencv2/opencv.hpp>
 
-#include "filter.hh"
+#include "../filter.hh"
 #include "filter_contour.hh"
 
 extern cv::Mat iframe;          // XXXXX declare properly
