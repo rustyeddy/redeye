@@ -3,14 +3,17 @@
 #include <map>
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 using namespace cv;
+using json = nlohmann::json;
 
 class Filter
 {
 protected:
     string      _name;
+    json        _config;
 
 public:
     Filter(string n);

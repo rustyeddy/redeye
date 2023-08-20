@@ -18,6 +18,7 @@ private:
     string      _iface          = "eth0";
     string      _mqtt_broker    = "localhost";
     int         _mjpg_port      = 1234;
+    string      _outdir         = "redout";
     string      _video_name     = "";
     string      _video_uri      = "/video0";
     int         _web_port       = 8000;
@@ -38,6 +39,8 @@ public:
 
     Video*      get_video();
     Image*      get_image();
+
+    void        dump();
 };
 
 extern Config *config;

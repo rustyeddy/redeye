@@ -22,10 +22,14 @@ using namespace std;
 
 void* hello_loop(void *);
 
-int main(int argc, char* argv[], char *envp[] )
+int main(int argc, char *argv[], char *envp[])
 {
     config = new Config( argc, argv, envp );
+    config->dump();
+}
 
+int main_server(int argc, char* argv[], char *envp[] )
+{
     // TODO: this will need to be fixed for other machines
     ID = get_ip_address(config->get_iface()); 
     filters = new FltFilters();
