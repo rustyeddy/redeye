@@ -8,7 +8,7 @@ add_library( Filters
 	filter_bigger.cc
 	filter_contour.cc
 	filter_default.cc
-	# filter_face_detect.cc
+	filter_face_detect.cc
 	filter_resize.cc
 )
 
