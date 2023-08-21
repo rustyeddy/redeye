@@ -20,19 +20,56 @@ string ID       = "";
 
 using namespace std;
 
+int start_server(Config *config);
+int process_file(Config *config);
 void* hello_loop(void *);
 
 int main(int argc, char *argv[], char *envp[])
 {
     config = new Config( argc, argv, envp );
     config->dump();
+
+    filters = new FltFilters();
+    Filter *flt = filters->get(config->get_filter_name());
+    if (flt == NULL) {
+        cout << "Could not find the filter " << config->get_filter_name() << endl;
+        exit(1);
+    }
+
+    // Start the server if we have been configured to do so.
+    if (config->start_server()) {
+        start_server(config);
+        exit(0);
+    }
+    
+    // We must have a file
+    if (process_file(config)) {
+        cerr << "Failed to process file: " << config->get_file_name() << endl;
+        exit(1);
+    }
+    exit(0);
 }
 
-int main_server(int argc, char* argv[], char *envp[] )
+int process_file(Config *config)
+{
+    Mat frame = imread(config->get_file_name());
+
+    // check if we succeeded
+    if (frame.empty()) {
+        cerr << "ERROR! blank frame grabbed\n";
+        return -1;
+    }
+    // show live and wait for a key with timeout long enough to show images
+    imshow("Live", frame);
+    waitKey(5) >= 0;
+
+    return 0;
+}
+
+int start_server(Config *config)
 {
     // TODO: this will need to be fixed for other machines
     ID = get_ip_address(config->get_iface()); 
-    filters = new FltFilters();
     pthread_t t_mqtt;
     pthread_t t_player;
     pthread_t t_web;

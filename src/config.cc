@@ -31,6 +31,10 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
             _outdir = optarg;
             break;
 
+        case 's':
+            _start_server = true;
+            break;
+
         case 'v':
             _video_name = optarg;
             break;
