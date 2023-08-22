@@ -15,6 +15,7 @@
 Config*         config  = NULL;
 Player*         player  = NULL;
 FltFilters*     filters = NULL;
+Filter*         flt = NULL;
 
 string ID       = "";
 
@@ -30,7 +31,7 @@ int main(int argc, char *argv[], char *envp[])
     config->dump();
 
     filters = new FltFilters();
-    Filter *flt = filters->get(config->get_filter_name());
+    flt = filters->get(config->get_filter_name());
     if (flt == NULL) {
         cout << "Could not find the filter " << config->get_filter_name() << endl;
         exit(1);
@@ -52,17 +53,34 @@ int main(int argc, char *argv[], char *envp[])
 
 int process_file(Config *config)
 {
-    Mat frame = imread(config->get_file_name());
-
-    // check if we succeeded
-    if (frame.empty()) {
-        cerr << "ERROR! blank frame grabbed\n";
+    VideoCapture cap;
+    Mat frame;
+    cap.open(config->get_file_name());
+    if (!cap.isOpened()) {
+        cerr << "ERROR! Unable to open camera\n";
         return -1;
     }
-    // show live and wait for a key with timeout long enough to show images
-    imshow("Live", frame);
-    waitKey(5) >= 0;
 
+    //--- GRAB AND WRITE LOOP
+    cout << "Start grabbing" << endl
+         << "Press any key to terminate" << endl;
+
+    for (;;) {
+        // wait for a new frame from camera and store it into 'frame'
+        cap.read(frame);
+        // Mat frame = imread(config->get_file_name());
+        // check if we succeeded
+        if (frame.empty()) {
+            cerr << "ERROR! blank frame grabbed\n";
+            break;
+        }
+
+        Mat *f2 = flt->filter(&frame);
+
+        // show live and wait for a key with timeout long enough to show images
+        imshow("Live", *f2);
+        waitKey(0) >= 0;
+    }
     return 0;
 }
 

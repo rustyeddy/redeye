@@ -20,7 +20,6 @@ public:
 
     string Name();       
     string to_string() { return _name; }
-    bool   init() { return true; }
 
     // All derivative classes must implement the filter method to
     // simply transform an image into another one.

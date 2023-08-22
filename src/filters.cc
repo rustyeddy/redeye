@@ -28,8 +28,7 @@ Filter* FltFilters::get(string name)
     auto it = _filters.find(name);
     if (it != _filters.end()) {
         Filter *filter = (Filter*) it->second;
-        filter->init();
-        return filter;
+         return filter;
     }
     return NULL;
 }
