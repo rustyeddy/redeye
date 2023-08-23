@@ -36,6 +36,7 @@ int main(int argc, char *argv[], char *envp[])
         cout << "Could not find the filter " << config->get_filter_name() << endl;
         exit(1);
     }
+    flt->init();
 
     // Start the server if we have been configured to do so.
     if (config->start_server()) {
@@ -55,6 +56,7 @@ int process_file(Config *config)
 {
     VideoCapture cap;
     Mat frame;
+
     cap.open(config->get_file_name());
     if (!cap.isOpened()) {
         cerr << "ERROR! Unable to open camera\n";
@@ -68,8 +70,6 @@ int process_file(Config *config)
     for (;;) {
         // wait for a new frame from camera and store it into 'frame'
         cap.read(frame);
-        // Mat frame = imread(config->get_file_name());
-        // check if we succeeded
         if (frame.empty()) {
             cerr << "ERROR! blank frame grabbed\n";
             break;

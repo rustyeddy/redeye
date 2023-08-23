@@ -26,6 +26,8 @@ private:
 
 public:
     FltHaarCascade();
+    bool init();
+
     cv::Mat* filter(cv::Mat* iframe);
 };
 

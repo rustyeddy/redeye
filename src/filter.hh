@@ -13,13 +13,16 @@ class Filter
 {
 protected:
     string      _name;
-    json        _config;
+    json        _config = NULL;
 
 public:
     Filter(string n);
 
     string Name();       
     string to_string() { return _name; }
+
+    // Some derivative class can override the init function
+    virtual bool init() { return true; }
 
     // All derivative classes must implement the filter method to
     // simply transform an image into another one.
