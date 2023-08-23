@@ -19,7 +19,7 @@ private:
     string      _mqtt_broker    = "localhost";
     int         _mjpg_port      = 1234;
     string      _outdir         = "redout";
-    int         _start_server   = 0;
+    bool        _start_server   = false;
     string      _video_name     = "";
     string      _video_uri      = "/video0";
     int         _web_port       = 8000;
