@@ -13,7 +13,7 @@ Config::Config( int argc, char *argv[], char *envp[ ] )
 int Config::parse_args( int argc, char *argv[], char *envp[] )
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:f:i:v:")) != -1) {
+    while ((opt = getopt(argc, argv, "b:f:i:o:v:")) != -1) {
         switch (opt) {
         case 'b':
             _mqtt_broker = optarg;
@@ -27,6 +27,14 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
             _iface = optarg;
             break;
 
+        case 'o':
+            _outdir = optarg;
+            break;
+
+        case 's':
+            _start_server = true;
+            break;
+
         case 'v':
             _video_name = optarg;
             break;
@@ -37,6 +45,13 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
             exit(1);
             break;
         }
+    }
+
+    cout << "O: " << optind << " - A: " << argc << endl;
+
+    // Allow multiple images
+    if (argc >= optind) {
+        _file_name = argv[optind];
     }
 
     return 1;
@@ -59,3 +74,15 @@ Image*  Config::get_image()
     return img;
 }
 
+void    Config::dump()
+{
+    cout << "Filter: "          << _filter_name << endl;
+    cout << "File: "            << _file_name << endl;
+    cout << "Gstreamer: "       << _gstreamer << endl;
+    cout << "Interface: "       << _iface << endl;
+    cout << "MQTT Broker: "     << _mqtt_broker << endl;
+    cout << "Outdir: "          << _outdir << endl;
+    cout << "MJPG Port: "       << _mjpg_port << endl;
+    cout << "Video URI: "       << _video_uri << endl;
+    cout << "Web Port: "        << _web_port << endl;
+}

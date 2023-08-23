@@ -11,7 +11,6 @@ private:
 
 public:
     FltBigger();
-    
     Mat* filter(Mat* iframe);
 };
 

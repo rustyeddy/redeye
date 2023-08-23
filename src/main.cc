@@ -15,20 +15,79 @@
 Config*         config  = NULL;
 Player*         player  = NULL;
 FltFilters*     filters = NULL;
+Filter*         flt = NULL;
 
 string ID       = "";
 
 using namespace std;
 
+int start_server(Config *config);
+int process_file(Config *config);
 void* hello_loop(void *);
 
-int main(int argc, char* argv[], char *envp[] )
+int main(int argc, char *argv[], char *envp[])
 {
     config = new Config( argc, argv, envp );
+    config->dump();
 
+    filters = new FltFilters();
+    flt = filters->get(config->get_filter_name());
+    if (flt == NULL) {
+        cout << "Could not find the filter " << config->get_filter_name() << endl;
+        exit(1);
+    }
+    flt->init();
+
+    // Start the server if we have been configured to do so.
+    if (config->start_server()) {
+        start_server(config);
+        exit(0);
+    }
+    
+    // We must have a file
+    if (process_file(config)) {
+        cerr << "Failed to process file: " << config->get_file_name() << endl;
+        exit(1);
+    }
+    exit(0);
+}
+
+int process_file(Config *config)
+{
+    VideoCapture cap;
+    Mat frame;
+
+    cap.open(config->get_file_name());
+    if (!cap.isOpened()) {
+        cerr << "ERROR! Unable to open camera\n";
+        return -1;
+    }
+
+    //--- GRAB AND WRITE LOOP
+    cout << "Start grabbing" << endl
+         << "Press any key to terminate" << endl;
+
+    for (;;) {
+        // wait for a new frame from camera and store it into 'frame'
+        cap.read(frame);
+        if (frame.empty()) {
+            cerr << "ERROR! blank frame grabbed\n";
+            break;
+        }
+
+        Mat *f2 = flt->filter(&frame);
+
+        // show live and wait for a key with timeout long enough to show images
+        imshow("Live", *f2);
+        waitKey(0) >= 0;
+    }
+    return 0;
+}
+
+int start_server(Config *config)
+{
     // TODO: this will need to be fixed for other machines
     ID = get_ip_address(config->get_iface()); 
-    filters = new FltFilters();
     pthread_t t_mqtt;
     pthread_t t_player;
     pthread_t t_web;

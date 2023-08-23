@@ -12,7 +12,7 @@ FltFilters::FltFilters() {
     add( "bigger", new FltBigger() );
     add( "contour", new FltContour() ); 
     add( "canny", new FltCanny() );
-//    add( "face-detect", new FltHaarCascade() );
+    add( "face-detect", new FltHaarCascade() );
     add( "gaussian", new FltGaussianBlur() );
     add( "smaller", new FltSmaller() );
     add( "resize", new FltResize() );
@@ -28,7 +28,7 @@ Filter* FltFilters::get(string name)
     auto it = _filters.find(name);
     if (it != _filters.end()) {
         Filter *filter = (Filter*) it->second;
-        return filter;
+         return filter;
     }
     return NULL;
 }

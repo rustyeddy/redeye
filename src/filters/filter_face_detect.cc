@@ -6,19 +6,25 @@ using namespace std;
 
 FltHaarCascade::FltHaarCascade() : Filter("face-detect")
 {
-    _face_cascade_name = "haarcascades/haarcascade_frontalface_alt.xml";
-    _eyes_cascade_name = "haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+    _config = R"({
+               "files": [
+                   "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_alt.xml",
+                   "/usr/local/share/opencv4/haarcascades/haarcascade_eye_tree_eyeglasses.xml"
+                   ]
+        })"_json;
+}
 
-    if (!_face_cascade.load(samples::findFileOrKeep(_face_cascade_name))) {
-        cerr << "WARNING: Could not load Face cascade for nested objects" << endl;
-        return;
+bool FltHaarCascade::init()
+{
+    for ( string f : _config["files"] ) {
+        if ( !_face_cascade.load(f) ) {
+            cerr << "WARNING: Could not load Face cascade for nested objects" << endl;
+            return false;
+        }
     }
 
-    if (!_eyes_cascade.load(samples::findFileOrKeep(_eyes_cascade_name))) {
-        cerr << "WARNING: Could not load Eyes cascade for nested objects" << endl;
-        return;
-    }
     _filter_ok = true;
+    return true;
 }
 
 cv::Mat* FltHaarCascade::filter(cv::Mat* iframe)
