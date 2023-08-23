@@ -32,11 +32,14 @@ int main(int argc, char *argv[], char *envp[])
 
     filters = new FltFilters();
     flt = filters->get(config->get_filter_name());
-    if (flt == NULL) {
+    if (config->get_filter_name() != "" && flt == NULL) {
         cout << "Could not find the filter " << config->get_filter_name() << endl;
         exit(1);
     }
-    flt->init();
+    if (flt != NULL) {
+        flt->init();
+    }
+
 
     // Start the server if we have been configured to do so.
     if (config->start_server()) {

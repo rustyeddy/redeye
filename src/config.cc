@@ -13,7 +13,7 @@ Config::Config( int argc, char *argv[], char *envp[ ] )
 int Config::parse_args( int argc, char *argv[], char *envp[] )
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:f:i:o:v:")) != -1) {
+    while ((opt = getopt(argc, argv, "b:f:i:o:sv:")) != -1) {
         switch (opt) {
         case 'b':
             _mqtt_broker = optarg;
@@ -50,7 +50,7 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
     cout << "O: " << optind << " - A: " << argc << endl;
 
     // Allow multiple images
-    if (argc >= optind) {
+    if (argc > optind) {
         _file_name = argv[optind];
     }
 
