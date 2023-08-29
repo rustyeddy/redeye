@@ -39,19 +39,70 @@ int main(int argc, char *argv[], char *envp[])
     }
     if (flt != NULL) flt->init();
 
-    // Start the server if we have been configured to do so.
-    if (config->start_server()) {
-        start_server(config);
-        exit(0);
-    }
-    
-    // We must have a file
-    if (process_file(config)) {
-        cerr << "Failed to process file: " << config->get_file_name() << endl;
+    int rc = start_server(config);
+    if (rc == -1) {
         exit(1);
     }
+
+    // // Start the server if we have been configured to do so.
+    // if (config->start_server()) {
+    //     exit(0);
+    // }
+    
+    // We must have a file
+    // if (process_file(config)) {
+    //     cerr << "Failed to process file: " << config->get_file_name() << endl;
+    //     exit(1);
+    // }
     exit(0);
 }
+
+int start_server(Config *config)
+{
+    cout << "Getting video sources\n" ;
+    auto vsrcs = config->get_video_sources();
+    if (vsrcs.size() < 1) {
+        cerr << "No video sources have been identified, exiting..." << endl;
+        return -1;
+    }
+
+    // TODO: this will need to be fixed for other machines
+    ID = get_ip_address(config->get_iface()); 
+    pthread_t t_mqtt;
+    pthread_t t_player;
+    pthread_t t_web;
+    pthread_t t_hello;
+    
+    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
+    pthread_create(&t_web,  NULL, web_start, NULL);
+    pthread_create(&t_hello, NULL, hello_loop, NULL);
+
+    for ( string vname : config->get_video_sources() ) {
+
+        cout << "Opening video source: " << vname << endl;
+
+        Video* vid = new Video(vname);
+
+        Player* player  = new Player();
+        player->set_filter( config->get_filter_name() );
+        player->add_imgsrc( vid );
+        video_players[vname] = player;
+
+        // mqtt_add_player()
+        // cv::startWindowThread();
+        pthread_create(&t_player, NULL, &play_video, player);
+        // cv::destroyAllWindows();
+    }
+    
+    pthread_join(t_web, NULL);
+    pthread_join(t_mqtt, NULL);
+    pthread_join(t_player, NULL); 
+    pthread_join(t_hello, NULL);
+
+    cout << "Goodbye, all done. " << endl;
+    exit(0);
+}
+
 
 int process_file(Config *config)
 {
@@ -83,45 +134,6 @@ int process_file(Config *config)
         waitKey(0) >= 0;
     }
     return 0;
-}
-
-int start_server(Config *config)
-{
-    // TODO: this will need to be fixed for other machines
-    ID = get_ip_address(config->get_iface()); 
-    pthread_t t_mqtt;
-    pthread_t t_player;
-    pthread_t t_web;
-    pthread_t t_hello;
-    
-    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
-    pthread_create(&t_web,  NULL, web_start, NULL);
-    pthread_create(&t_hello, NULL, hello_loop, NULL);
-
-    for ( string vname : config->get_video_sources() ) {
-
-        cout << "Opening video source: " << vname << endl;
-
-        Video* vid = new Video(vname);
-
-        Player* player  = new Player();
-        player->set_filter( config->get_filter_name() );
-        player->add_imgsrc( vid );
-        video_players[vname] = player;
-
-        // mqtt_add_player()
-        // cv::startWindowThread();
-        // pthread_create(&t_player, NULL, &play_video, player);
-        // cv::destroyAllWindows();
-    }
-    
-    pthread_join(t_web, NULL);
-    pthread_join(t_mqtt, NULL);
-    // pthread_join(t_player, NULL); 
-    pthread_join(t_hello, NULL);
-
-    cout << "Goodbye, all done. " << endl;
-    exit(0);
 }
 
 void* hello_loop(void *)

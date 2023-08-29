@@ -51,9 +51,17 @@ Video::Video( string camstr )
 	// string t = get_tegra(1024, 768, 60);
 	// cout << "TEGRA String: " << t << endl;
 	_cap.open( pipeline, cv::CAP_GSTREAMER );
-    } else {
+        
+    } else if ( camstr == "dev0" ) {
 
-	_cap.open( camstr );
+        cout << "Opening camera device 0\n" ;
+        _cap.open( 0 );
+
+    } else if ( camstr == "dev1" ) {
+
+        cout << "Opening camera device 1\n" ;
+	_cap.open( 1 );
+
     }
 
     cout << "Camera is NOW opened" << endl;

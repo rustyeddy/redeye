@@ -32,12 +32,15 @@ static void mqtt_connect_callback(struct mosquitto *mosq, void *userdata, int re
         return;
     }
     /* Subscribe to broker information topics on successful connect. */
-    string tbase = "redeye/camera/" + string((char *) userdata);
+    string id((char *) userdata);
+    string tbase = "redeye/camera/" + id + "/+/";
 
-    mosquitto_subscribe(mosq, NULL, "redeye/camera/+/+/cmd", 2);
-    mosquitto_subscribe(mosq, NULL, "redeye/camera/+/+/filter", 2);
+    string topic(tbase + "cmd");
+    mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
+    topic = tbase + "filter";
+    mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
     
-    mqtt->publish("redeye/announce/camera", (char *) userdata);
+    mqtt->publish("redeye/announce/camera", id);
 }
 
 static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
