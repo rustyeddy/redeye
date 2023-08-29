@@ -23,6 +23,11 @@ std::string gstreamer_pipeline (int sensor, int capture_width, int capture_heigh
            std::to_string(display_height) + ", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
 }
 
+Video::Video( int devnum )
+{
+    _cap.open( devnum );
+}
+
 Video::Video( string camstr )
 {
     cout << "Opening camstr " << camstr << endl;
@@ -47,6 +52,7 @@ Video::Video( string camstr )
 	// cout << "TEGRA String: " << t << endl;
 	_cap.open( pipeline, cv::CAP_GSTREAMER );
     } else {
+
 	_cap.open( camstr );
     }
 

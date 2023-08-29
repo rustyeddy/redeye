@@ -25,9 +25,8 @@ static FltFilters* get_filters()
 
 extern void mjpeg_iframe_q(cv::Mat& iframe);
 
-Player::Player(string name)
+Player::Player()
 {
-    _name = name;
 }
 
 void Player::command_request(string s)

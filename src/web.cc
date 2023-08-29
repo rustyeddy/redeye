@@ -38,11 +38,11 @@ void get_cameras_cb(const httplib::Request &, httplib::Response &res)
 
 void put_camera_play_cb(const httplib::Request &, httplib::Response &res)
 {
-    player->record();
+    // player->record();
 
-    json j;
-    j["recording"] = player->is_recording();
-    res.set_content( j.dump(), "application/json" );
+    // json j;
+    // j["recording"] = player->is_recording();
+    // res.set_content( j.dump(), "application/json" );
 }
 
 void get_health_cb(const httplib::Request &, httplib::Response &res)

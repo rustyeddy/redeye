@@ -13,11 +13,12 @@
 #include "filter.hh"
 
 Config*         config  = NULL;
-Player*         player  = NULL;
 FltFilters*     filters = NULL;
 Filter*         flt = NULL;
-
 string ID       = "";
+MQTT*           mqtt = NULL;
+
+map<string, Player*> video_players;
 
 using namespace std;
 
@@ -36,10 +37,7 @@ int main(int argc, char *argv[], char *envp[])
         cout << "Could not find the filter " << config->get_filter_name() << endl;
         exit(1);
     }
-    if (flt != NULL) {
-        flt->init();
-    }
-
+    if (flt != NULL) flt->init();
 
     // Start the server if we have been configured to do so.
     if (config->start_server()) {
@@ -100,17 +98,26 @@ int start_server(Config *config)
     pthread_create(&t_web,  NULL, web_start, NULL);
     pthread_create(&t_hello, NULL, hello_loop, NULL);
 
-    player  = new Player( config->get_filter_name() );
-    player->set_filter( config->get_filter_name() );
-    player->add_imgsrc( config->get_video() );
+    for ( string vname : config->get_video_sources() ) {
 
-    cv::startWindowThread();
-    pthread_create(&t_player, NULL, &play_video, player);
-    cv::destroyAllWindows();
+        cout << "Opening video source: " << vname << endl;
+
+        Video* vid = new Video(vname);
+
+        Player* player  = new Player();
+        player->set_filter( config->get_filter_name() );
+        player->add_imgsrc( vid );
+        video_players[vname] = player;
+
+        // mqtt_add_player()
+        // cv::startWindowThread();
+        // pthread_create(&t_player, NULL, &play_video, player);
+        // cv::destroyAllWindows();
+    }
     
     pthread_join(t_web, NULL);
     pthread_join(t_mqtt, NULL);
-    pthread_join(t_player, NULL); 
+    // pthread_join(t_player, NULL); 
     pthread_join(t_hello, NULL);
 
     cout << "Goodbye, all done. " << endl;
@@ -130,7 +137,7 @@ void* hello_loop(void *)
 
     while (running) {
         sleep(10);              // announce every 10 seconds
-        mqtt_publish("redeye/announce/camera", jstr.c_str());
+        mqtt->publish("redeye/announce/camera", jstr.c_str());
     }
     return NULL;
 }

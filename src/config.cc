@@ -13,7 +13,7 @@ Config::Config( int argc, char *argv[], char *envp[ ] )
 int Config::parse_args( int argc, char *argv[], char *envp[] )
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:f:i:o:sv:")) != -1) {
+    while ((opt = getopt(argc, argv, "b:f:i:o:s")) != -1) {
         switch (opt) {
         case 'b':
             _mqtt_broker = optarg;
@@ -35,10 +35,6 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
             _start_server = true;
             break;
 
-        case 'v':
-            _video_name = optarg;
-            break;
-
         default:
             cerr << "ERROR unknown option: " << to_string(opt) << endl;
             cerr << "Usage: re [ -v <videodev> | -i interface ] [-f <filter-name>]" << endl;
@@ -47,21 +43,12 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
         }
     }
 
-    cout << "O: " << optind << " - A: " << argc << endl;
-
-    // Allow multiple images
-    if (argc > optind) {
-        _file_name = argv[optind];
+    for (; optind < argc; optind++) {
+        string vidname(argv[optind]);
+        _video_srcs.push_back(vidname);
     }
 
     return 1;
-}
-
-Video*  Config::get_video()
-{
-    if ( _video_name == "" ) return NULL;
-    Video *vid = new Video( _video_name );
-    return vid;
 }
 
 Image*  Config::get_image()
@@ -83,6 +70,5 @@ void    Config::dump()
     cout << "MQTT Broker: "     << _mqtt_broker << endl;
     cout << "Outdir: "          << _outdir << endl;
     cout << "MJPG Port: "       << _mjpg_port << endl;
-    cout << "Video URI: "       << _video_uri << endl;
     cout << "Web Port: "        << _web_port << endl;
 }

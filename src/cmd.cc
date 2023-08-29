@@ -6,7 +6,7 @@
 using namespace std;
 
 // Brute force it for now
-void cmd_runner( char *cmdstr )
+void cmd_runner( Player* player, string cmdstr )
 {
     string cmd(cmdstr);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 #include <opencv2/opencv.hpp>
 
 #include "imgsrc.hh"
@@ -34,6 +35,7 @@ class Video : public Imgsrc
     
 public:
     Video( string camstr );
+    Video( int devnum );
 
     Dimensions  dims = Dimensions( 1280, 720, 60 );
     string	get_tegra();
@@ -42,3 +44,4 @@ public:
     int         get_width()  { return _cap.get( cv::CAP_PROP_FRAME_WIDTH ); }
     int         get_height() { return _cap.get( cv::CAP_PROP_FRAME_HEIGHT ); }
 };
+
