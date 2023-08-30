@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <mosquitto.h>
 
 #include "player.hh"
@@ -26,14 +27,17 @@ public:
 // redeye/player/<hostid>/<playerid>
 class Topic
 {
-    string _player_name;
-    string _cmd;
+    string              _player_name;
+    string              _cmd;
+    vector<string>      _items;
 
 public:
     Topic(string tstr);
     
     string cmd() { return _cmd; }
     Player *player();
+
+    vector<string> items();
 };
 
 void *mqtt_loop(void *p);

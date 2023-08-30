@@ -54,7 +54,6 @@ Video::Video( string camstr )
         
     } else if ( camstr == "dev0" ) {
 
-        cout << "Opening camera device 0\n" ;
         _cap.open( 0 );
 
     } else if ( camstr == "dev1" ) {
@@ -63,8 +62,6 @@ Video::Video( string camstr )
 	_cap.open( 1 );
 
     }
-
-    cout << "Camera is NOW opened" << endl;
 
     if ( !_cap.isOpened() ) {
         cerr << "ERROR - the camera is not open. exiting ... " << endl;

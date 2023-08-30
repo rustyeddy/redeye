@@ -127,11 +127,13 @@ void MQTT::loop(void *p)
 
 Topic::Topic(string tstr)
 {
-    // redeye/player/<hostid>/<playerid>
-    // 1. Parse topic
-    // 2. extract host id
-    // 3. extract player name
-    // 4. Save hostid and player name
+    int start = 0;
+    for (int i = 0; i < tstr.length(); i++) {
+        if (tstr[i] == '/') {
+            _items.push_back(tstr.substr(start, i - start));
+            start = i;
+        }
+    }
 }
 
 Player *Topic::player()

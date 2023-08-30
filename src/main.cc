@@ -12,6 +12,8 @@
 
 #include "filter.hh"
 
+using namespace std;
+
 Config*         config  = NULL;
 FltFilters*     filters = NULL;
 Filter*         flt = NULL;
@@ -19,8 +21,6 @@ string ID       = "";
 MQTT*           mqtt = NULL;
 
 map<string, Player*> video_players;
-
-using namespace std;
 
 int start_server(Config *config);
 int process_file(Config *config);
@@ -30,6 +30,8 @@ int main(int argc, char *argv[], char *envp[])
 {
     config = new Config( argc, argv, envp );
     config->dump();
+
+    mqtt = new MQTT("localhost");
 
     filters = new FltFilters();
     flt = filters->get(config->get_filter_name());
@@ -73,10 +75,6 @@ int start_server(Config *config)
     pthread_t t_web;
     pthread_t t_hello;
     
-    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
-    pthread_create(&t_web,  NULL, web_start, NULL);
-    pthread_create(&t_hello, NULL, hello_loop, NULL);
-
     for ( string vname : config->get_video_sources() ) {
 
         cout << "Opening video source: " << vname << endl;
@@ -94,6 +92,10 @@ int start_server(Config *config)
         // cv::destroyAllWindows();
     }
     
+    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
+    pthread_create(&t_web,  NULL, web_start, NULL);
+    pthread_create(&t_hello, NULL, hello_loop, NULL);
+
     pthread_join(t_web, NULL);
     pthread_join(t_mqtt, NULL);
     pthread_join(t_player, NULL); 
@@ -153,3 +155,4 @@ void* hello_loop(void *)
     }
     return NULL;
 }
+
