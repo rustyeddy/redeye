@@ -27,6 +27,8 @@ extern void mjpeg_iframe_q(cv::Mat& iframe);
 
 Player::Player()
 {
+    // Subscribe to MQTT messages for this player
+    mqtt->subscribe("redeye/player/" + ID + "/" + _name);
 }
 
 void Player::command_request(string s)

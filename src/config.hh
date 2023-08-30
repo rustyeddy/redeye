@@ -48,3 +48,4 @@ public:
 };
 
 extern Config *config;
+extern string ID;

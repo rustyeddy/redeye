@@ -31,8 +31,6 @@ int main(int argc, char *argv[], char *envp[])
     config = new Config( argc, argv, envp );
     config->dump();
 
-    mqtt = new MQTT("localhost");
-
     filters = new FltFilters();
     flt = filters->get(config->get_filter_name());
     if (config->get_filter_name() != "" && flt == NULL) {
@@ -45,18 +43,6 @@ int main(int argc, char *argv[], char *envp[])
     if (rc == -1) {
         exit(1);
     }
-
-    // // Start the server if we have been configured to do so.
-    // if (config->start_server()) {
-    //     exit(0);
-    // }
-    
-    // We must have a file
-    // if (process_file(config)) {
-    //     cerr << "Failed to process file: " << config->get_file_name() << endl;
-    //     exit(1);
-    // }
-    exit(0);
 }
 
 int start_server(Config *config)
@@ -67,6 +53,8 @@ int start_server(Config *config)
         cerr << "No video sources have been identified, exiting..." << endl;
         return -1;
     }
+
+    mqtt = new MQTT("localhost");
 
     // TODO: this will need to be fixed for other machines
     ID = get_ip_address(config->get_iface()); 
@@ -86,10 +74,9 @@ int start_server(Config *config)
         player->add_imgsrc( vid );
         video_players[vname] = player;
 
-        // mqtt_add_player()
-        // cv::startWindowThread();
+        cv::startWindowThread();
         pthread_create(&t_player, NULL, &play_video, player);
-        // cv::destroyAllWindows();
+        cv::destroyAllWindows();
     }
     
     pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
