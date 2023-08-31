@@ -18,7 +18,7 @@ private:
     string      _gstreamer      = "";
     string      _iface          = "eth0";
     string      _mqtt_broker    = "localhost";
-    int         _mjpg_port      = 1234;
+    int         _mjpg_port      = 9000;
     string      _outdir         = "redout";
     bool        _start_server   = false;
     string      _video_uri      = "";

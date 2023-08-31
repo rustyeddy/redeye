@@ -38,6 +38,7 @@ public:
     Video( int devnum );
 
     Dimensions  dims = Dimensions( 1280, 720, 60 );
+    string      get_name()   { return _name; }
     string	get_tegra();
     cv::Mat*    get_frame();        // add the << operator for reading frames
     double      get_fps()    { return _cap.get( cv::CAP_PROP_FRAME_COUNT ); }

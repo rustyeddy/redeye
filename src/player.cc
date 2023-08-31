@@ -33,7 +33,7 @@ Player::Player( string vname, string fname )
     if ( fname != "" ) {
         set_filter( fname );        
     }
-    add_imgsrc( vid );
+    _imgsrc = vid;
 
     // Subscribe to MQTT messages for this player
     mqtt->subscribe("redeye/player/" + ID + "/" + _name);
@@ -45,7 +45,7 @@ void Player::command_request(string s)
     _cmdlist.push_back(s);
 }
 
-void Player::record()
+void Player::record( )
 {
     _recording = true;
 
@@ -111,15 +111,18 @@ void Player::stream( cv::Mat* mat )
     std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90 };
     std::vector<uchar> buff_bgr;
     cv::imencode(".jpg", *mat, buff_bgr, params);
-    _streamer.publish("/video0", std::string(buff_bgr.begin(), buff_bgr.end()));
+
+    _streamer.publish("/", std::string(buff_bgr.begin(), buff_bgr.end()));
 }
 
 void Player::play_loop()
 {
-    while ( _recording ) {
+    // cout << ">>> Play loop: " << _recording << endl;
+    _playing = true;
+    while ( _playing ) {
 
         if ( _frameQ.empty() ) {
-            usleep(100);
+            usleep(1000);
             continue;
         }
         
@@ -135,8 +138,8 @@ void Player::play_loop()
         if ( ! _paused && _local_display ) {
             display( iframe );
         }
-        if ( _recording && _video_writer ) {
-            // _video_writer << &iframe;
+        if ( _recording ) {
+            record();
         }
 	delete iframe;
     }
@@ -146,8 +149,18 @@ void *play_loop( void *p )
 {
     Player *player = (Player *)p;
 
-    cout << "PLay loop ! " << endl;
+    cout << "Found player PLay loop ! " << player->get_name() << endl;
     player->play_loop();
+    cout << "PLay loop returning " << endl;
+    return NULL;
+}
+
+void *play_video( void *p )
+{
+    Player *player = (Player *)p;
+
+    cout << "Found player PLay loop ! " << player->get_name() << endl;
+    player->play();
     cout << "PLay loop returning " << endl;
     return NULL;
 }
@@ -155,6 +168,8 @@ void *play_loop( void *p )
 void Player::play( )
 {
     _recording = true;
+
+    cout << "Players only love you when they are playing" << endl;
     
     // Start the streamer 
     _streamer.start( config->get_mjpg_port() );
@@ -180,6 +195,7 @@ void Player::play( )
             delete iframe;
             continue;
         }
+
         _frameQ.push( iframe );
     }
 

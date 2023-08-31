@@ -65,7 +65,7 @@ int main(int argc, char *argv[], char *envp[])
         video_players[vname] = player;
 
         cv::startWindowThread();
-        pthread_create(&t_player, NULL, &play_loop, player);
+        pthread_create(&t_player, NULL, &play_video, player);
         cv::destroyAllWindows();
     }
     

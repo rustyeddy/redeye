@@ -54,6 +54,7 @@ Video::Video( string camstr )
         
     } else if ( camstr == "dev0" ) {
 
+        cout << "Opening camera device 0\n";
         _cap.open( 0 );
 
     } else if ( camstr == "dev1" ) {

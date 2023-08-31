@@ -29,6 +29,7 @@ private:
     MJPEGStreamer       _streamer;
 
     bool                _streaming = false;
+    bool                _playing = false;
     bool                _recording = false;
     bool                _paused = false;
     bool                _local_display = false;
@@ -42,7 +43,8 @@ private:
 public:
     Player( string name, string filter_name = "" );
 
-    void        add_imgsrc( Imgsrc* i ) { _imgsrc = i; }
+    string      get_name() { return _name; }
+
     void        set_filter( string name );
 
     string      snapshot_filename()  { return "redeye-snapshot.png"; }
@@ -68,6 +70,6 @@ public:
 };
 
 extern map<string, Player*> video_players;
-extern void* play_loop( void *p ); // callback for pthreads
+extern void* play_video( void *p ); // callback for pthreads
 extern void mouse_callback( int event, int x, int y, int flags, void *param );
 
