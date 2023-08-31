@@ -40,7 +40,7 @@ private:
     int                 _frameQ_dropped = 0;
 
 public:
-    Player();
+    Player( string name, string filter_name = "" );
 
     void        add_imgsrc( Imgsrc* i ) { _imgsrc = i; }
     void        set_filter( string name );
@@ -68,6 +68,6 @@ public:
 };
 
 extern map<string, Player*> video_players;
-extern void* play_video( void *p ); // callback for pthreads
+extern void* play_loop( void *p ); // callback for pthreads
 extern void mouse_callback( int event, int x, int y, int flags, void *param );
 

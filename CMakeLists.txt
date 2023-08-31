@@ -16,6 +16,8 @@ ExternalProject_Add(httplib
         TEST_COMMAND    ""
 )
 
+find_package(nadjieb_mjpeg_streamer REQUIRED)
+
 # ExternalProject_Add(json
 #         GIT_REPOSITORY  git@github.com:nlohmann/json.git
 #         TEST_COMMAND    ""

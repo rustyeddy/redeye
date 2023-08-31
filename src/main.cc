@@ -28,9 +28,20 @@ void* hello_loop(void *);
 
 int main(int argc, char *argv[], char *envp[])
 {
+    pthread_t t_mqtt;
+    pthread_t t_player;
+    pthread_t t_web;
+    pthread_t t_hello;
+
     config = new Config( argc, argv, envp );
     config->dump();
 
+    mqtt = new MQTT("localhost");
+
+    // TODO: this will need to be fixed for other machines
+    ID = get_ip_address(config->get_iface()); 
+
+    // Create a 
     filters = new FltFilters();
     flt = filters->get(config->get_filter_name());
     if (config->get_filter_name() != "" && flt == NULL) {
@@ -39,43 +50,22 @@ int main(int argc, char *argv[], char *envp[])
     }
     if (flt != NULL) flt->init();
 
-    int rc = start_server(config);
-    if (rc == -1) {
-        exit(1);
-    }
-}
-
-int start_server(Config *config)
-{
     cout << "Getting video sources\n" ;
     auto vsrcs = config->get_video_sources();
     if (vsrcs.size() < 1) {
         cerr << "No video sources have been identified, exiting..." << endl;
         return -1;
     }
-
-    mqtt = new MQTT("localhost");
-
-    // TODO: this will need to be fixed for other machines
-    ID = get_ip_address(config->get_iface()); 
-    pthread_t t_mqtt;
-    pthread_t t_player;
-    pthread_t t_web;
-    pthread_t t_hello;
     
     for ( string vname : config->get_video_sources() ) {
 
         cout << "Opening video source: " << vname << endl;
 
-        Video* vid = new Video(vname);
-
-        Player* player  = new Player();
-        player->set_filter( config->get_filter_name() );
-        player->add_imgsrc( vid );
+        Player* player  = new Player( vname );
         video_players[vname] = player;
 
         cv::startWindowThread();
-        pthread_create(&t_player, NULL, &play_video, player);
+        pthread_create(&t_player, NULL, &play_loop, player);
         cv::destroyAllWindows();
     }
     
@@ -83,9 +73,9 @@ int start_server(Config *config)
     pthread_create(&t_web,  NULL, web_start, NULL);
     pthread_create(&t_hello, NULL, hello_loop, NULL);
 
-    pthread_join(t_web, NULL);
+    // Catch all player threads here
     pthread_join(t_mqtt, NULL);
-    pthread_join(t_player, NULL); 
+    pthread_join(t_web, NULL);
     pthread_join(t_hello, NULL);
 
     cout << "Goodbye, all done. " << endl;

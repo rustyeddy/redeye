@@ -25,8 +25,16 @@ static FltFilters* get_filters()
 
 extern void mjpeg_iframe_q(cv::Mat& iframe);
 
-Player::Player()
+Player::Player( string vname, string fname )
 {
+    Video* vid = new Video(vname);
+
+    // XXX figure out better scheme for filter
+    if ( fname != "" ) {
+        set_filter( fname );        
+    }
+    add_imgsrc( vid );
+
     // Subscribe to MQTT messages for this player
     mqtt->subscribe("redeye/player/" + ID + "/" + _name);
 }
@@ -219,19 +227,14 @@ void Player::set_filter( string name )
     }
 }
 
-void Player::display( Mat* img )
+void
+Player::display( Mat* img )
 {
     imshow( _name, *img );
 }
 
-void *play_video( void *p )
-{
-    Player *player = (Player *) p;
-    player->play( );
-    return p;
-}
-
-void mouse_callback( int event, int x, int y, int flags, void *param )
+void
+mouse_callback( int event, int x, int y, int flags, void *param )
 {
     Filter *f = NULL;
     if (param != NULL) {
