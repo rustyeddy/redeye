@@ -63,6 +63,11 @@ void Player::stop()
     }
 }
 
+void Player::add_message( Message* msg )
+{
+    _messageQ.push(msg);
+}
+
 void Player::check_commands( )
 {
     
@@ -121,27 +126,38 @@ void Player::play_loop()
     _playing = true;
     while ( _playing ) {
 
-        if ( _frameQ.empty() ) {
+        if ( ! _messageQ.empty() ) {
+
+            Message* msg = _messageQ.front();
+            _messageQ.pop();
+
+            msg->dump();
+
+            
+        } else if ( ! _frameQ.empty() ) {
+        
+            cv::Mat* iframe = _frameQ.front();
+            _frameQ.pop();
+
+            // move this up
+            if ( _filter ) {
+                iframe = _filter->filter( iframe );
+            }
+
+            stream ( iframe );
+            if ( ! _paused && _local_display ) {
+                display( iframe );
+            }
+            if ( _recording ) {
+                record();
+            }
+            delete iframe;
+
+        } else {
             usleep(1000);
             continue;
         }
-        
-        cv::Mat* iframe = _frameQ.front();
-        _frameQ.pop();
 
-        // move this up
-        if ( _filter ) {
-            iframe = _filter->filter( iframe );
-        }
-
-        stream ( iframe );
-        if ( ! _paused && _local_display ) {
-            display( iframe );
-        }
-        if ( _recording ) {
-            record();
-        }
-	delete iframe;
     }
 }
 

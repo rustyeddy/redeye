@@ -7,6 +7,7 @@
 
 #include "config.hh"
 #include "cmd.hh"
+#include "message.hh"
 #include "mqtt.hh"
 #include "player.hh"
 
@@ -43,39 +44,28 @@ static void mqtt_connect_callback(struct mosquitto *mosq, void *userdata, int re
     mqtt->publish("re/announce/camera", id);
 }
 
-static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
+static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *mqsg)
 {
     bool match = 0;
-    printf("MQTT Message topic: %s - %d - %s\n", msg->topic, msg->payloadlen, (char *) msg->payload);
+    printf("MQTT Message topic: %s - %d - %s\n", mqsg->topic, mqsg->payloadlen, (char *) mqsg->payload);
 
-    string topic(msg->topic);
-    string message((char *)msg->payload);
-    mqtt->message_handler(topic, message);
-}
+    Message *msg = (mqsg->payloadlen) ?
+        new Message(string(mqsg->topic), string((char *)mqsg->payload)) :
+        new Message(string(mqsg->topic));
 
-void MQTT::message_handler(string tstr, string msg)
-{
-    Topic topic(tstr);
-
-    Player* player = topic.player();
-    if (player == NULL) {
-        cerr << "Uknown player for topic: " << tstr << endl;
+    string pname = msg->get_player();
+    if (pname == "" ) {
+        cerr << "Uknown player for topic: " << mqsg->topic << endl;
         return;
     }
 
-    if ( topic.cmd() == "cmd" ) {
-        cout << "MQTT CMD sent to us: " << msg << endl;
-        cmd_runner( player, msg );
-
-    } else if ( topic.cmd() == "filter" ) {
-
-        player->set_filter( msg );
-        
-    } else {
-
-        cerr << "ERROR MQTT Message Callback - unknown topic " << tstr << endl;
-
+    Player* player = video_players[pname];
+    if (player == NULL) {
+        cerr << "Could not find player from message: " << pname << endl;
+        return;
     }
+
+    player->add_message(msg);
 }
 
 

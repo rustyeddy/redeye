@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include "filter.hh"
 #include "video.hh"
+#include "message.hh"
 
 using namespace std;
 using namespace cv;
@@ -40,6 +41,8 @@ private:
     int                 _frameQ_size = 0;
     int                 _frameQ_dropped = 0;
 
+    queue<Message*>     _messageQ;;
+
 public:
     Player( string name, string filter_name = "" );
 
@@ -62,6 +65,7 @@ public:
     void        stream( Mat* frame );
     void        display( Mat* frame );
     int         save_image( Mat& frame );
+    void        add_message( Message* msg );
 
     void        play_loop();
     void        command_request(string s);

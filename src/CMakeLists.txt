@@ -12,6 +12,7 @@ add_executable( redeye
                 filters.cc
                 image.cc
                 main.cc
+                message.cc
                 mqtt.cc
                 net.cc
                 player.cc
