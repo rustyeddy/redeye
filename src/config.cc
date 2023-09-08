@@ -13,7 +13,7 @@ Config::Config( int argc, char *argv[], char *envp[ ] )
 int Config::parse_args( int argc, char *argv[], char *envp[] )
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:f:i:o:s")) != -1) {
+    while ((opt = getopt(argc, argv, "b:f:i:o:sv")) != -1) {
         switch (opt) {
         case 'b':
             _mqtt_broker = optarg;
@@ -24,7 +24,7 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
             break;
 
         case 'i':
-            _iface = optarg;
+            _id = optarg;
             break;
 
         case 'o':
@@ -33,6 +33,10 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
 
         case 's':
             _start_server = true;
+            break;
+
+        case 'v':
+            verbose = true;
             break;
 
         default:

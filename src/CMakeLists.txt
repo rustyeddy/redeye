@@ -8,6 +8,7 @@ add_executable( redeye
                 buffers.cc
                 config.cc
                 cmd.cc
+                event.cc
                 filter.cc
                 filters.cc
                 image.cc

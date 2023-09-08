@@ -13,6 +13,7 @@ using namespace std;
 class Config
 {
 private:
+    string      _id             = "redeye";
     string      _filter_name    = "";
     string      _file_name      = "";
     string      _gstreamer      = "";
@@ -29,8 +30,11 @@ private:
 
 public:
     Config( int argc, char *argv[], char *envp[] );
+    int         verbose                 = false;
+
     int parse_args( int argc, char *argv[], char *envp[] );
 
+    string      id()                    { return _id; }
     string      get_filter_name()       { return _filter_name; }
     string      get_file_name()         { return _file_name; }
 
@@ -48,4 +52,3 @@ public:
 };
 
 extern Config *config;
-extern string ID;

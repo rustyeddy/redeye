@@ -7,6 +7,7 @@
 
 #include "config.hh"
 #include "cmd.hh"
+#include "event.hh"
 #include "message.hh"
 #include "mqtt.hh"
 #include "player.hh"
@@ -32,16 +33,22 @@ static void mqtt_connect_callback(struct mosquitto *mosq, void *userdata, int re
         fprintf(stderr, "Connect failed\n");
         return;
     }
+
     /* Subscribe to broker information topics on successful connect. */
     string id((char *) userdata);
-    string tbase = "re/camera/" + id + "/+/";
+    string tbase = "re/camera/" + config->id() + "/+/+";
 
-    string topic(tbase + "cmd");
-    mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
-    topic = tbase + "filter";
-    mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
-    
-    mqtt->publish("re/announce/camera", id);
+    cout << "Listening to tbase: " << tbase << endl;
+
+    // string topic(tbase + "cmd");
+    mosquitto_subscribe(mosq, NULL, tbase.c_str(), 2);
+    // topic = tbase + "filter";
+    // mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
+
+    if (config->verbose) {
+        mqtt->publish("re/announce/camera", id);        
+    }
+
 }
 
 static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *mqsg)
@@ -53,19 +60,7 @@ static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struc
         new Message(string(mqsg->topic), string((char *)mqsg->payload)) :
         new Message(string(mqsg->topic));
 
-    string pname = msg->get_player();
-    if (pname == "" ) {
-        cerr << "Uknown player for topic: " << mqsg->topic << endl;
-        return;
-    }
-
-    Player* player = video_players[pname];
-    if (player == NULL) {
-        cerr << "Could not find player from message: " << pname << endl;
-        return;
-    }
-
-    player->add_message(msg);
+    events.add(msg);
 }
 
 

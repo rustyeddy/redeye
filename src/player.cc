@@ -36,7 +36,7 @@ Player::Player( string vname, string fname )
     _imgsrc = vid;
 
     // Subscribe to MQTT messages for this player
-    mqtt->subscribe("redeye/player/" + ID + "/" + _name);
+    mqtt->subscribe("redeye/player/" + config->id() + "/" + _name);
 }
 
 void Player::command_request(string s)
@@ -185,7 +185,7 @@ void Player::play( )
 {
     _recording = true;
 
-    cout << "Players only love you when they are playing" << endl;
+    cout << "Player " << _name << endl;
     
     // Start the streamer 
     _streamer.start( config->get_mjpg_port() );

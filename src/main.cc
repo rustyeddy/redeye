@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "config.hh"
+#include "event.hh"
 #include "mqtt.hh"
 #include "net.hh"
 #include "player.hh"
@@ -19,6 +20,7 @@ FltFilters*     filters = NULL;
 Filter*         flt = NULL;
 string ID       = "";
 MQTT*           mqtt = NULL;
+EventLoop       events;
 
 map<string, Player*> video_players;
 
@@ -28,6 +30,7 @@ void* hello_loop(void *);
 
 int main(int argc, char *argv[], char *envp[])
 {
+    pthread_t t_events;
     pthread_t t_mqtt;
     pthread_t t_player;
     pthread_t t_web;
@@ -38,10 +41,7 @@ int main(int argc, char *argv[], char *envp[])
 
     mqtt = new MQTT("localhost");
 
-    // TODO: this will need to be fixed for other machines
-    ID = get_ip_address(config->get_iface()); 
-
-    // Create a 
+    // Move this initialization into a better class
     filters = new FltFilters();
     flt = filters->get(config->get_filter_name());
     if (config->get_filter_name() != "" && flt == NULL) {
@@ -68,8 +68,9 @@ int main(int argc, char *argv[], char *envp[])
         pthread_create(&t_player, NULL, &play_video, player);
         cv::destroyAllWindows();
     }
-    
-    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)ID.c_str());
+
+    pthread_create(&t_events, NULL, event_loop, &events);
+    pthread_create(&t_mqtt, NULL, mqtt_loop, (char *)NULL);
     pthread_create(&t_web,  NULL, web_start, NULL);
     pthread_create(&t_hello, NULL, hello_loop, NULL);
 
