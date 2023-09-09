@@ -36,7 +36,7 @@ static void mqtt_connect_callback(struct mosquitto *mosq, void *userdata, int re
 
     /* Subscribe to broker information topics on successful connect. */
     string id((char *) userdata);
-    string tbase = "re/camera/" + config->id() + "/+/+";
+    string tbase = "re/video/" + config->id() + "/+/+";
 
     cout << "Listening to tbase: " << tbase << endl;
 
@@ -46,7 +46,7 @@ static void mqtt_connect_callback(struct mosquitto *mosq, void *userdata, int re
     // mosquitto_subscribe(mosq, NULL, topic.c_str(), 2);
 
     if (config->verbose) {
-        mqtt->publish("re/announce/camera", id);        
+        mqtt->publish("re/announce/host", id);        
     }
 
 }

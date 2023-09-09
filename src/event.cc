@@ -10,11 +10,13 @@ void EventLoop::add(Message* msg)
 void EventLoop::loop()
 {
     while (_running) {
-        if (_messages.size()) {
+        if (_messages.size() < 1) {
             usleep(20);
+            continue;
         }
 
         Message *msg = _messages.front();
+        _messages.pop();
         msg->dump();
 
         // // XXX Add these bits to the main event loop
