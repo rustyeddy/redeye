@@ -120,9 +120,3 @@ Topic::Topic(string tstr)
         }
     }
 }
-
-Player *Topic::player()
-{
-    Player* p = video_players[_player_name];
-    return p;
-}

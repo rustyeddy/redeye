@@ -41,7 +41,7 @@ private:
     int                 _frameQ_size = 0;
     int                 _frameQ_dropped = 0;
 
-    queue<Message*>     _messageQ;;
+    queue<Message*>     _messageQ;
 
 public:
     Player( string name, string filter_name = "" );
@@ -73,7 +73,22 @@ public:
     string      to_string() { return _name; }
 };
 
-extern map<string, Player*> video_players;
+class Players
+{
+private:
+    map<string, Player*> _players;
+
+public:
+    Players() {}
+
+    Player* add(string name);
+    Player* get(string name);
+
+    void process_message(Message* msg);
+};
+
+extern Players video_players;
+
 extern void* play_video( void *p ); // callback for pthreads
 extern void mouse_callback( int event, int x, int y, int flags, void *param );
 

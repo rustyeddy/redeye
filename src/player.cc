@@ -131,6 +131,7 @@ void Player::play_loop()
             Message* msg = _messageQ.front();
             _messageQ.pop();
 
+            cout << "Player Play Loop got a message\n";
             msg->dump();
 
             
@@ -264,6 +265,43 @@ Player::display( Mat* img )
 {
     imshow( _name, *img );
 }
+
+Player* 
+Players::add(string name)
+{
+    cout << "Opening video source: " << name << endl;
+
+    Player* player  = new Player( name );
+    _players[name] = player;
+
+    return player;
+}
+
+Player*
+Players::get(string name)
+{
+    return _players[name];
+}
+
+void
+Players::process_message(Message* msg)
+{
+    string name = msg->get_element(MessageVideoPlayer);
+    if (name == "") {
+        cerr << "Failed to find video with name: " << name << endl;
+        return;
+    }
+
+    Player* player = _players[name];
+    if (player == NULL) {
+        cerr << "Failed to find video with name: " << name << endl;
+        return;
+    }
+
+    cout << "Player is adding a message: " << endl;
+    player->add_message(msg);
+}
+
 
 void
 mouse_callback( int event, int x, int y, int flags, void *param )

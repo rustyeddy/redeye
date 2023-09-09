@@ -22,7 +22,7 @@ string ID       = "";
 MQTT*           mqtt = NULL;
 EventLoop       events;
 
-map<string, Player*> video_players;
+Players         video_players;
 
 int start_server(Config *config);
 int process_file(Config *config);
@@ -59,10 +59,7 @@ int main(int argc, char *argv[], char *envp[])
     
     for ( string vname : config->get_video_sources() ) {
 
-        cout << "Opening video source: " << vname << endl;
-
-        Player* player  = new Player( vname );
-        video_players[vname] = player;
+        Player* player = video_players.add(vname);
 
         cv::startWindowThread();
         pthread_create(&t_player, NULL, &play_video, player);

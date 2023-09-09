@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include "event.hh"
+#include "player.hh"
 
 void EventLoop::add(Message* msg)
 {
@@ -19,20 +20,15 @@ void EventLoop::loop()
         _messages.pop();
         msg->dump();
 
-        // // XXX Add these bits to the main event loop
-        // string pname = msg->get_player();
-        // if (pname == "" ) {
-        //     cerr << "Uknown player for topic: " << mqsg->topic << endl;
-        //     return;
-        // }
+        string msg_type = msg->get_type();
+        if (msg_type == "video") {
 
-        // Player* player = video_players[pname];
-        // if (player == NULL) {
-        //     cerr << "Could not find player from message: " << pname << endl;
-        //     return;
-        // }
+            cout << "We have a video message" << endl;
+            video_players.process_message(msg);
 
-        // player->add_message(msg);
+        } else {
+            cout << "We have an unknown message type: "<<  msg_type << endl;
+        }
     }
 }
 
@@ -41,3 +37,4 @@ void *event_loop(void *p)
     events.loop();
     return p;
 }
+
