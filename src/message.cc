@@ -39,9 +39,17 @@ void Message::parse_topic()
         _elements.push_back(token);
         start = end + 1;
     }
-
-    for (int i = 0; i < _elements.size(); i++) {
-        cout << i << ": " << _elements[i] << endl;
-    }
 }
 
+void Message::dump()
+{
+    for (int i = 0; i < _elements.size(); i++) {
+        if ( i == 0 ) {
+            cout << _elements[i];
+        } else {
+            cout << " :: " << _elements[i];             
+        }
+    }
+
+    cout << " = " << _value << endl;
+}

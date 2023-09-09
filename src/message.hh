@@ -23,7 +23,5 @@ public:
     string get_topic()  { return _topic; }
     string get_value()  { return _value; }
 
-    void dump() {
-        cout << _topic << ": " << _value << endl;
-    }
+    void dump();
 };
