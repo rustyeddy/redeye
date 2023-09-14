@@ -33,7 +33,27 @@ Video::Video( string camstr )
     cout << "Opening camstr " << camstr << endl;
     _name = camstr;
 
-    if ( camstr == "tegra0" || camstr == "tegra1" ) {
+    if ( camstr == "tegra0" ) {
+        
+	std::string pipeline = gstreamer_pipeline(0,
+                                                  dims.capture_width,
+						  dims.capture_height,
+						  dims.display_width,
+						  dims.display_height,
+						  dims.framerate,
+						  dims.flip_method);
+
+	std::cout << "Using pipeline: \n\t";
+	std::cout << "--------------------------------" << std::endl;
+	std::cout << pipeline << std::endl;
+	std::cout << "--------------------------------" << std::endl;
+
+	// string t = get_tegra(1024, 768, 60);
+	// cout << "TEGRA String: " << t << endl;
+	_cap.open( pipeline, cv::CAP_GSTREAMER );
+        
+    } else if ( camstr == "tegra1" ) {
+
         
 	std::string pipeline = gstreamer_pipeline(1,
                                                   dims.capture_width,
