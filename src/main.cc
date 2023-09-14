@@ -107,7 +107,7 @@ int process_file(Config *config)
         Mat *f2 = flt->filter(&frame);
 
         // show live and wait for a key with timeout long enough to show images
-        imshow("Live", *f2);
+        // imshow("Live", *f2);
         waitKey(0) >= 0;
     }
     return 0;

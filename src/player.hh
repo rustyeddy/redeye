@@ -55,7 +55,7 @@ public:
 
     VideoWriter* get_video_writer();
 
-    void        play();
+    void        play_loop();
     void        pause();
 
     bool        is_recording()  { return _recording; }
@@ -67,7 +67,7 @@ public:
     int         save_image( Mat& frame );
     void        add_message( Message* msg );
 
-    void        play_loop();
+    void        eventloop();
     void        command_request(string s);
     void	check_commands();
     string      to_string() { return _name; }

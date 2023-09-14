@@ -120,7 +120,7 @@ void Player::stream( cv::Mat* mat )
     _streamer.publish("/", std::string(buff_bgr.begin(), buff_bgr.end()));
 }
 
-void Player::play_loop()
+void Player::eventloop()
 {
     // cout << ">>> Play loop: " << _recording << endl;
     _playing = true;
@@ -133,32 +133,13 @@ void Player::play_loop()
 
             cout << "Player Play Loop got a message\n";
             msg->dump();
-
+        }
             
-        } else if ( ! _frameQ.empty() ) {
-        
-            cv::Mat* iframe = _frameQ.front();
-            _frameQ.pop();
 
-            // move this up
-            if ( _filter ) {
-                iframe = _filter->filter( iframe );
-            }
-
-            stream ( iframe );
-            if ( ! _paused && _local_display ) {
-                display( iframe );
-            }
-            if ( _recording ) {
-                record();
-            }
-            delete iframe;
-
-        } else {
+        else {
             usleep(1000);
             continue;
         }
-
     }
 }
 
@@ -167,7 +148,7 @@ void *play_loop( void *p )
     Player *player = (Player *)p;
 
     cout << "Found player PLay loop ! " << player->get_name() << endl;
-    player->play_loop();
+    player->eventloop();
     cout << "PLay loop returning " << endl;
     return NULL;
 }
@@ -177,12 +158,12 @@ void *play_video( void *p )
     Player *player = (Player *)p;
 
     cout << "Found player PLay loop ! " << player->get_name() << endl;
-    player->play();
+    player->play_loop();
     cout << "PLay loop returning " << endl;
     return NULL;
 }
 
-void Player::play( )
+void Player::play_loop( )
 {
     _recording = true;
 
@@ -213,10 +194,33 @@ void Player::play( )
             continue;
         }
 
-        _frameQ.push( iframe );
+        // move this up
+        if ( _filter ) {
+            iframe = _filter->filter( iframe );
+        }
+
+        // Just play the frame here
+        bool mjpg = false;
+        bool dplay = true;
+
+        if (dplay) {
+            display( iframe );  
+        } 
+
+        if (mjpg) {
+            // _frameQ.push( iframe );
+            stream ( iframe );
+        } 
+
+        // Send this on a q to not block display
+        if ( _recording ) {
+            record();
+        }
+        delete iframe;
+
     }
 
-    pthread_join( t_playloop, NULL );
+    // pthread_join( t_playloop, NULL );
 
     _streamer.stop();
     cerr << "Video has stopped playing.. " << endl;
