@@ -250,10 +250,11 @@ void Player::set_filter( string name )
 
         cout << "Setting filter to " << name << endl;
         _filter = filters->get(name);
-
         if ( _filter == NULL ) {
             cerr << "filter fialed probably not known: " << name << endl;
+            return;
         }
+        _filter->init();
     }
 }
 

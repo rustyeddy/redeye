@@ -77,7 +77,8 @@ cv::Mat* FltHaarCascade::detectAndDraw( cv::Mat* img )
     }
 
     t = (double) getTickCount() - t;
-    printf("Detection time: %g ms\n", t*1000/getTickFrequency());
+    // printf("Detection time: %g ms\n", t*1000/getTickFrequency());
+    cout << "Faces size: " << faces.size() << endl;
 
     for ( size_t i = 0; i < faces.size(); i++ ) {
         Rect r = faces[i];
