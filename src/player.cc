@@ -6,6 +6,7 @@
 
 #include "config.hh"
 #include "externs.hh"
+#include "event.hh"
 #include "filter.hh"
 #include "mqtt.hh"
 #include "player.hh"
@@ -120,7 +121,7 @@ void Player::stream( cv::Mat* mat )
     _streamer.publish("/", std::string(buff_bgr.begin(), buff_bgr.end()));
 }
 
-void Player::eventloop()
+void Player::event_loop()
 {
     // cout << ">>> Play loop: " << _recording << endl;
     _playing = true;
@@ -145,16 +146,6 @@ void *play_loop( void *p )
     Player *player = (Player *)p;
 
     cout << "Found player PLay loop ! " << player->get_name() << endl;
-    player->eventloop();
-    cout << "PLay loop returning " << endl;
-    return NULL;
-}
-
-void *play_video( void *p )
-{
-    Player *player = (Player *)p;
-
-    cout << "Found player PLay loop ! " << player->get_name() << endl;
     player->play_loop();
     cout << "PLay loop returning " << endl;
     return NULL;
@@ -171,7 +162,7 @@ void Player::play_loop( )
     _streaming = true;
 
     pthread_t t_playloop;
-    pthread_create( &t_playloop, NULL, ::play_loop, this );
+    pthread_create( &t_playloop, NULL, ::event_loop, this );
     while ( _recording ) {
 
 	cv::Mat* iframe = _imgsrc->get_frame();
@@ -269,7 +260,7 @@ void Player::set_filter( Filter *flt )
 void
 Player::display( Mat* img )
 {
-    // imshow( _name, *img );
+    imshow( _name, *img );
 }
 
 Player* 

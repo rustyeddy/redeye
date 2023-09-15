@@ -68,7 +68,7 @@ public:
     int         save_image( Mat& frame );
     void        add_message( Message* msg );
 
-    void        eventloop();
+    void        event_loop();
     void        command_request(string s);
     void	check_commands();
     string      to_string() { return _name; }
@@ -90,6 +90,6 @@ public:
 
 extern Players video_players;
 
-extern void* play_video( void *p ); // callback for pthreads
+extern void* play_loop( void *p ); // callback for pthreads
 extern void mouse_callback( int event, int x, int y, int flags, void *param );
 
