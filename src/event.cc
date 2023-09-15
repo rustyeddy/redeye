@@ -24,7 +24,22 @@ void EventLoop::loop()
         if (msg_type == "video") {
 
             cout << "We have a video message" << endl;
-            video_players.process_message(msg);
+            string name = msg->get_element(MessageVideoPlayer);
+            if (name == "") {
+                cerr << "Failed to find video with name: " << name << endl;
+                return;
+            }
+
+            Player* player = video_players.get(name);
+            if (player == NULL) {
+                cerr << "Failed to find video with name: " << name << endl;
+                return;
+            }
+
+            cout << "Player is adding a message: " << endl;
+            player->add_message(msg);
+
+            // video_players.process_message(msg);
 
         } else {
             cout << "We have an unknown message type: "<<  msg_type << endl;

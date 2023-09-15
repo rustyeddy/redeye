@@ -41,6 +41,7 @@ private:
     int                 _frameQ_size = 0;
     int                 _frameQ_dropped = 0;
 
+    pthread_t           _t_events;
     queue<Message*>     _messageQ;
 
 public:
@@ -67,6 +68,7 @@ public:
     void        display( Mat* frame );
     int         save_image( Mat& frame );
     void        add_message( Message* msg );
+    void        process_message( Message *msg );
 
     void        event_loop();
     void        command_request(string s);

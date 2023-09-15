@@ -1,5 +1,6 @@
 #include <list>
 #include <vector>
+#include <thread>
 #include <opencv2/opencv.hpp>
 
 #include "nadjieb/mjpeg_streamer.hpp"
@@ -133,7 +134,7 @@ void Player::event_loop()
             _messageQ.pop();
 
             cout << "Player Play Loop got a message\n";
-            msg->dump();
+            process_message(msg);
         } else {
             usleep(500);
             continue;
@@ -151,6 +152,14 @@ void *play_loop( void *p )
     return NULL;
 }
 
+static void *players_event_loop( void *p )
+{
+    Player *player = (Player*) p;
+    player->event_loop();
+
+    return p;
+}
+
 void Player::play_loop( )
 {
     _recording = true;
@@ -161,8 +170,7 @@ void Player::play_loop( )
     _streamer.start( config->get_mjpg_port() );
     _streaming = true;
 
-    pthread_t t_playloop;
-    pthread_create( &t_playloop, NULL, ::event_loop, this );
+    pthread_create( &_t_events, NULL, ::players_event_loop, this );
     while ( _recording ) {
 
 	cv::Mat* iframe = _imgsrc->get_frame();
@@ -263,6 +271,18 @@ Player::display( Mat* img )
     imshow( _name, *img );
 }
 
+void Player::process_message( Message *msg )
+{
+    string cmd = msg->get_element(5);
+    string val = msg->get_value();
+    cout << "Player process message: " << cmd << " : " << val << endl;
+
+    if (cmd == "filter") {
+        string fname = msg->get_value();
+        set_filter(fname);
+    }
+}
+
 Player* 
 Players::add(string name)
 {
@@ -283,20 +303,6 @@ Players::get(string name)
 void
 Players::process_message(Message* msg)
 {
-    string name = msg->get_element(MessageVideoPlayer);
-    if (name == "") {
-        cerr << "Failed to find video with name: " << name << endl;
-        return;
-    }
-
-    Player* player = _players[name];
-    if (player == NULL) {
-        cerr << "Failed to find video with name: " << name << endl;
-        return;
-    }
-
-    cout << "Player is adding a message: " << endl;
-    player->add_message(msg);
 }
 
 
