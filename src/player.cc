@@ -196,8 +196,8 @@ void Player::play_loop( )
         }
 
         // Just play the frame here
-        bool mjpg = false;
-        bool dplay = true;
+        bool mjpg = true;
+        bool dplay = false;
 
         if (dplay) {
             display( iframe );  
@@ -213,10 +213,7 @@ void Player::play_loop( )
             record();
         }
         delete iframe;
-
     }
-
-    // pthread_join( t_playloop, NULL );
 
     _streamer.stop();
     cerr << "Video has stopped playing.. " << endl;
