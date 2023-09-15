@@ -133,11 +133,8 @@ void Player::eventloop()
 
             cout << "Player Play Loop got a message\n";
             msg->dump();
-        }
-            
-
-        else {
-            usleep(1000);
+        } else {
+            usleep(500);
             continue;
         }
     }
@@ -262,6 +259,11 @@ void Player::set_filter( string name )
             cerr << "filter fialed probably not known: " << name << endl;
         }
     }
+}
+
+void Player::set_filter( Filter *flt )
+{
+    _filter = flt;
 }
 
 void

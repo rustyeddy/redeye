@@ -37,7 +37,7 @@ int main(int argc, char *argv[], char *envp[])
     pthread_t t_hello;
 
     config = new Config( argc, argv, envp );
-    config->dump();
+    // config->dump();
 
     mqtt = new MQTT("localhost");
 
@@ -60,6 +60,9 @@ int main(int argc, char *argv[], char *envp[])
     for ( string vname : config->get_video_sources() ) {
 
         Player* player = video_players.add(vname);
+        if (flt != NULL) {
+            player->set_filter(flt);
+        }
 
         cv::startWindowThread();
         pthread_create(&t_player, NULL, &play_video, player);

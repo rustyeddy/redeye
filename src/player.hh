@@ -33,7 +33,7 @@ private:
     bool                _playing = false;
     bool                _recording = false;
     bool                _paused = false;
-    bool                _local_display = false;
+    bool                _local_display = true;
 
     queue<cv::Mat*>     _frameQ;
 
@@ -49,6 +49,7 @@ public:
     string      get_name() { return _name; }
 
     void        set_filter( string name );
+    void        set_filter( Filter* flt );
 
     string      snapshot_filename()  { return "redeye-snapshot.png"; }
     string      video_filename()        { return "redeye-video.mp4"; }
