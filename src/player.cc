@@ -269,7 +269,7 @@ void Player::set_filter( Filter *flt )
 void
 Player::display( Mat* img )
 {
-    imshow( _name, *img );
+    // imshow( _name, *img );
 }
 
 Player* 
