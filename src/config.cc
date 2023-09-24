@@ -13,10 +13,14 @@ Config::Config( int argc, char *argv[], char *envp[ ] )
 int Config::parse_args( int argc, char *argv[], char *envp[] )
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:f:i:o:sv")) != -1) {
+    while ((opt = getopt(argc, argv, "b:df:i:mo:sv")) != -1) {
         switch (opt) {
         case 'b':
             _mqtt_broker = optarg;
+            break;
+
+        case 'd':
+            _display = true;
             break;
 
         case 'f':
@@ -25,6 +29,10 @@ int Config::parse_args( int argc, char *argv[], char *envp[] )
 
         case 'i':
             _id = optarg;
+            break;
+
+        case 'm':
+            _mjpg = true;
             break;
 
         case 'o':

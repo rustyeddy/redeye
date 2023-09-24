@@ -100,6 +100,7 @@ cv::Mat* FltHaarCascade::detectAndDraw( cv::Mat* img )
                        Point( cvRound(( r.x + r.width-1 ) * _scale ), cvRound(( r.y + r.height-1 ) * _scale) ),
                        color, 3, 8, 0 );
         }
+
         if ( _eyes_cascade.empty() ) {
             cout << "Eyes cascade is empty continuing ... " << endl;
             continue;

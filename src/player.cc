@@ -195,15 +195,11 @@ void Player::play_loop( )
             iframe = _filter->filter( iframe );
         }
 
-        // Just play the frame here
-        bool mjpg = true;
-        bool dplay = false;
-
-        if (dplay) {
+        if (config->display()) {
             display( iframe );  
         } 
 
-        if (mjpg) {
+        if (config->mjpeg()) {
             // _frameQ.push( iframe );
             stream ( iframe );
         } 
