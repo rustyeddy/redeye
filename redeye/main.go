@@ -3,66 +3,37 @@ package main
 import (
 	"flag"
 	"log"
-	"net/http"
 	"os"
 
+	"gocv.io/x/gocv"
 	"github.com/rustyeddy/redeye"
 )
 
-type Config struct {
-	Addr     string
-	Pipeline string
-	Device   interface{}
-}
-
-var config Config
+var (
+	config redeye.Configuration
+)
 
 func init() {
-	flag.StringVar(&config.Addr, "addr", ":1234", "Listent to address")
-	flag.StringVar(&config.Pipeline, "pipeline", "", "Pipeline to apply")
+	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
 }
-
-// go:embed index.html
-// var content embed.FS
 
 func main() {
 	flag.Parse()
 
-	srv := redeye.NewWebServer(config.Addr)
-	srv.Handle("/", http.FileServer(http.Dir("./html")))
-
-	if len(os.Args) < 1 {
-		log.Println("No video capture devices specified")
-		return
+	cam, err := redeye.GetWebcam(config.VideoDevice)
+	if err != nil {
+		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
+		os.Exit(1)
 	}
+	window := gocv.NewWindow("Hello")
 
-	vidsrcs := getVideoSrcs(os.Args[1:])
-	for i, vsrc := range vidsrcs {
-		mjpg := redeye.NewMJPEGPlayer(i)
-		srv.Handle(mjpg.URL(), mjpg)
-
-		imgQ := vsrc.Play()
-		mjpg.Play(imgQ)
+	imgQ := cam.Play()
+	for {
+		img := <-imgQ
+		window.IMShow(*img)
+		window.WaitKey(1)
 	}
-	srv.Listen()
 }
 
-func getVideoSrcs(args []string) []*redeye.VideoSource {
 
-	var capdevs []*redeye.VideoSource
-	for _, capstr := range os.Args[1:] {
 
-		// Open up the video capture device
-		cap := redeye.GetVideoSource(capstr)
-		if cap == nil {
-			log.Println("Failed to get capture device", capstr)
-			os.Exit(1)
-		}
-
-		if config.Pipeline != "" {
-			log.Println("Looking up pipcap")
-		}
-	}
-	return capdevs
-
-}

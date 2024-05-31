@@ -9,11 +9,13 @@ import (
 )
 
 type Configuration struct {
-	Addr     string `json:"addr"`
-	BasePath string `json:"basepath"`
-	Broker   string `json:"broker"`
+	HTTPAddr	string `json:"addr"`		// http address and port
+	HTMLPath	string `json:"basepath"`	// html basepath
+	MQTTBroker	string `json:"broker"`		// MQTT Broker
+	VideoDevice int	   `json:video-device`	// Capture device
+
 	Debug	 bool	`json:"debug"`
-	ID		 string `json:"broker"`
+	ID		 string `json:"id"`
 	Pipeline string `json:"pipeline"`
 	Thumb    string `json:"thumb"`
 	Vidsrc   string `json:"vidsrc"`
