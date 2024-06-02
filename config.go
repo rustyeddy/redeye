@@ -1,6 +1,7 @@
 package redeye
 
 import (
+	"flag"
 	"fmt"
 
 	"encoding/json"
@@ -9,13 +10,14 @@ import (
 )
 
 type Configuration struct {
-	HTTPAddr	string `json:"addr"`		// http address and port
-	HTMLPath	string `json:"basepath"`	// html basepath
-	MQTTBroker	string `json:"broker"`		// MQTT Broker
-	VideoDevice int	   `json:video-device`	// Capture device
+	HTTPAddr    string `json:"addr"`       // http address and port
+	HTMLPath    string `json:"basepath"`   // html basepath
+	MQTTBroker  string `json:"broker"`     // MQTT Broker
+	VideoDevice int    `json:video-device` // Capture device
+	CascadeFile string `json:cascade-file`
 
-	Debug	 bool	`json:"debug"`
-	ID		 string `json:"id"`
+	Debug    bool   `json:"debug"`
+	ID       string `json:"id"`
 	Pipeline string `json:"pipeline"`
 	Thumb    string `json:"thumb"`
 	Vidsrc   string `json:"vidsrc"`
@@ -25,6 +27,11 @@ type Configuration struct {
 var (
 	Config Configuration
 )
+
+func init() {
+	flag.IntVar(&Config.VideoDevice, "video-device", 0, "Video capture device. default 0")
+	flag.StringVar(&Config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
+}
 
 func (c *Configuration) Save(path string) (err error) {
 
