@@ -19,7 +19,7 @@ var (
 func init() {
 	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
 	flag.StringVar(&config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
-	flag.BoolVar(&config.ListFilters, "filters", true, "list available filters")
+	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 }
 
 func main() {
@@ -42,11 +42,10 @@ func main() {
 	defer window.Close()
 
 	var img *gocv.Mat
-	playing := true
 
 	imgQ := cam.Play()
-	for playing {
-		img, playing = <-imgQ
+	for redeye.Running {
+		img, redeye.Running = <-imgQ
 
 		window.IMShow(*img)
 		window.WaitKey(1)
