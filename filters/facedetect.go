@@ -1,7 +1,6 @@
-package redeye
+package filters
 
 import (
-	"embed"
 	"fmt"
 	"image"
 	"image/color"
@@ -11,7 +10,7 @@ import (
 )
 
 //go:embed data/*.xml
-var models embed.FS
+//var models embed.FS
 
 type FaceDetector struct {
 	XMLFile string

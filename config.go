@@ -15,13 +15,13 @@ type Configuration struct {
 	MQTTBroker  string `json:"broker"`     // MQTT Broker
 	VideoDevice int    `json:video-device` // Capture device
 	CascadeFile string `json:cascade-file`
+	Pipeline    string `json:"pipeline"`
 
-	Debug    bool   `json:"debug"`
-	ID       string `json:"id"`
-	Pipeline string `json:"pipeline"`
-	Thumb    string `json:"thumb"`
-	Vidsrc   string `json:"vidsrc"`
-	Vidaddr  string `json:"vidaddr"`
+	Debug   bool   `json:"debug"`
+	ID      string `json:"id"`
+	Thumb   string `json:"thumb"`
+	Vidsrc  string `json:"vidsrc"`
+	Vidaddr string `json:"vidaddr"`
 }
 
 var (

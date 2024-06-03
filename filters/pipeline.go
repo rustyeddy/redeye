@@ -1,6 +1,10 @@
-package redeye
+package filters
 
 import "gocv.io/x/gocv"
+
+type Pipeline struct {
+	Filters []*Filter
+}
 
 type Pipeline interface {
 	Filter(*gocv.Mat) *gocv.Mat
