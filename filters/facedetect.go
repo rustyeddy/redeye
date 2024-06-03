@@ -5,12 +5,12 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"os"
+
+	// "github.com/rustyeddy/redeye/Config"
 
 	"gocv.io/x/gocv"
 )
-
-//go:embed data/*.xml
-//var models embed.FS
 
 type FaceDetector struct {
 	XMLFile string
@@ -25,14 +25,14 @@ func (flt FaceDetector) Filter(vidQ <-chan *gocv.Mat) (fltQ chan<- *gocv.Mat) {
 	classifier := gocv.NewCascadeClassifier()
 	defer classifier.Close()
 
-	fname := "data/haarcascade_frontalface_default.xml"
-	xmlFile, err := models.Open(fname)
+	// fname := "data/haarcascade_frontalface_default.xml"
+	xmlFile, err := os.ReadFile(flt.XMLFile)
 	if err != nil {
 		log.Printf("Error reading cascade file: %v", xmlFile)
 		return
 	}
 
-	if !classifier.Load(fname) {
+	if !classifier.Load(flt.XMLFile) {
 		log.Printf("Error reading cascade file: %v", xmlFile)
 		return
 	}

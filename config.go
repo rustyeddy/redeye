@@ -1,7 +1,6 @@
 package redeye
 
 import (
-	"flag"
 	"fmt"
 
 	"encoding/json"
@@ -17,21 +16,17 @@ type Configuration struct {
 	CascadeFile string `json:cascade-file`
 	Pipeline    string `json:"pipeline"`
 
-	Debug   bool   `json:"debug"`
+	ListFilters bool `json:"list-filters"` // List filters
+
 	ID      string `json:"id"`
 	Thumb   string `json:"thumb"`
-	Vidsrc  string `json:"vidsrc"`
-	Vidaddr string `json:"vidaddr"`
+	Debug   bool   `json:"debug"`
+
 }
 
 var (
 	Config Configuration
 )
-
-func init() {
-	flag.IntVar(&Config.VideoDevice, "video-device", 0, "Video capture device. default 0")
-	flag.StringVar(&Config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
-}
 
 func (c *Configuration) Save(path string) (err error) {
 

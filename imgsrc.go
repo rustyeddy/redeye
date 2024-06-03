@@ -6,6 +6,10 @@ import (
 	"gocv.io/x/gocv"
 )
 
+var (
+	Running = false
+)
+
 type ImgSrc interface {
 	Play() chan *gocv.Mat
 	Close()
@@ -29,11 +33,11 @@ func GetWebcam(deviceID int) (cam *Webcam, err error) {
 
 func (cam *Webcam) Play() (imgQ chan *gocv.Mat) {
 
-	cam.running = true
+	Running = true
 	imgQ = make(chan *gocv.Mat)
 	img := gocv.NewMat() // This image will be leaked
 	go func() {
-		for cam.running {
+		for Running {
 			time.Sleep(5 * time.Millisecond)
 			cam.Cap.Read(&img)
 			if img.Empty() {
