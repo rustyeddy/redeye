@@ -3,7 +3,7 @@ package filters
 import "gocv.io/x/gocv"
 
 type Filter interface {
-	Process(inQ <-chan *gocv.Mat) (outQ chan<- *gocv.Mat)
+	Process(inQ chan *gocv.Mat) (outQ chan *gocv.Mat)
 	Description() string
 }
 

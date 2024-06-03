@@ -25,8 +25,12 @@ type Configuration struct {
 }
 
 var (
-	Config Configuration
+	Config *Configuration = &Configuration{}
 )
+
+func GetConfig() *Configuration {
+	return Config
+}
 
 func (c *Configuration) Save(path string) (err error) {
 

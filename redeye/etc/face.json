@@ -1,0 +1,11 @@
+{
+    "filters": [
+        "resize": {
+            "x": 640,
+            "y": 480
+        },
+        "facedetect": {
+            "xmlfile": "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
+        }
+    ]
+}

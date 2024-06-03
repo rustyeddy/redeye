@@ -20,16 +20,18 @@ var (
 )
 
 func init() {
-	fltResize.FilterDescription.description = "Resize image to fixed width, height" 
+	fltResize.FilterDescription.description = "Resize image to fixed width, height"
+	fltResize.X = 2.0
+	fltResize.Y = 2.0
 	Filters.Add("resize", fltResize)
 }
 
 func (flt Resize) Filter(img *gocv.Mat) *gocv.Mat {
-	gocv.Resize(*img, img, image.Point{}, flt.X, flt.Y, 3)
+	gocv.Resize(*img, img, image.Point{}, flt.X, flt.Y, gocv.InterpolationArea)
 	return img
 }
 
-func (flt Resize) Process(inQ <-chan *gocv.Mat) (outQ chan<- *gocv.Mat) {
+func (flt Resize) Process(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
 	outQ = make(chan *gocv.Mat)
 
 	var img *gocv.Mat

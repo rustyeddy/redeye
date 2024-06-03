@@ -5,10 +5,8 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"os"
 
-	// "github.com/rustyeddy/redeye/Config"
-
+	"github.com/rustyeddy/redeye"
 	"gocv.io/x/gocv"
 )
 
@@ -27,7 +25,12 @@ func init() {
 	Filters.Add("face-detect", fltFaceDetect)
 }
 
-func (flt FaceDetector) Process(vidQ <-chan *gocv.Mat) (fltQ chan<- *gocv.Mat) {
+func (flt FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
+
+	return img
+}
+
+func (flt FaceDetector) Process(vidQ chan *gocv.Mat) (fltQ chan *gocv.Mat) {
 
 	// color for the rect when faces detected
 	blue := color.RGBA{0, 0, 255, 0}
@@ -36,22 +39,23 @@ func (flt FaceDetector) Process(vidQ <-chan *gocv.Mat) (fltQ chan<- *gocv.Mat) {
 	classifier := gocv.NewCascadeClassifier()
 	defer classifier.Close()
 
-	// fname := "data/haarcascade_frontalface_default.xml"
-	xmlFile, err := os.ReadFile(flt.XMLFile)
-	if err != nil {
-		log.Printf("Error reading cascade file: %v", xmlFile)
-		return
-	}
-
+	flt.XMLFile = redeye.GetConfig().CascadeFile
+	// // fname := "data/haarcascade_frontalface_default.xml"
+	// xmlFile, err := os.ReadFile(redeye.Config.CascadeFile)
+	// if err != nil {
+	// 	log.Printf("Error reading cascade file: %v", xmlFile)
+	// 	return
+	// }
+	log.Println("FLT XMLFILE: ", flt.XMLFile)
 	if !classifier.Load(flt.XMLFile) {
-		log.Printf("Error reading cascade file: %v", xmlFile)
+		log.Printf("Error reading cascade file: %v", flt.XMLFile)
 		return
 	}
 
 	fltQ = make(chan *gocv.Mat)
-
 	for {
 		img := <-vidQ
+		fmt.Println("Facedetect image %p\n", img)
 
 		// detect faces
 		rects := classifier.DetectMultiScale(*img)
