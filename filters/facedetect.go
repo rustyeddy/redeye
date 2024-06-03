@@ -14,9 +14,20 @@ import (
 
 type FaceDetector struct {
 	XMLFile string
+
+	FilterDescription
 }
 
-func (flt FaceDetector) Filter(vidQ <-chan *gocv.Mat) (fltQ chan<- *gocv.Mat) {
+var (
+	fltFaceDetect FaceDetector
+)
+
+func init() {
+	fltFaceDetect.FilterDescription.description = "Detect faces with XML Cascade"
+	Filters.Add("face-detect", fltFaceDetect)
+}
+
+func (flt FaceDetector) Process(vidQ <-chan *gocv.Mat) (fltQ chan<- *gocv.Mat) {
 
 	// color for the rect when faces detected
 	blue := color.RGBA{0, 0, 255, 0}

@@ -29,7 +29,7 @@ func (flt Resize) Filter(img *gocv.Mat) *gocv.Mat {
 	return img
 }
 
-func (flt Resize) Process(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
+func (flt Resize) Process(inQ <-chan *gocv.Mat) (outQ chan<- *gocv.Mat) {
 	outQ = make(chan *gocv.Mat)
 
 	var img *gocv.Mat
