@@ -53,9 +53,10 @@ func (flt FaceDetector) Process(vidQ chan *gocv.Mat) (fltQ chan *gocv.Mat) {
 	}
 
 	fltQ = make(chan *gocv.Mat)
+	fmt.Printf("FLT Q: %+v\n", fltQ)
 	for {
 		img := <-vidQ
-		fmt.Println("Facedetect image %p\n", img)
+		fmt.Printf("Facedetect image %p\n", img)
 
 		// detect faces
 		rects := classifier.DetectMultiScale(*img)
@@ -72,6 +73,7 @@ func (flt FaceDetector) Process(vidQ chan *gocv.Mat) (fltQ chan *gocv.Mat) {
 		}
 
 		// show the image in the window, and wait 1 millisecond
+		fmt.Printf("SENDING IMAGE TO fltQ: %+v", fltQ)
 		fltQ <- img
 	}
 	return fltQ

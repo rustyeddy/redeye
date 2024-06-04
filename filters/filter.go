@@ -3,8 +3,25 @@ package filters
 import "gocv.io/x/gocv"
 
 type Filter interface {
-	Process(inQ chan *gocv.Mat) (outQ chan *gocv.Mat)
+	Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat)
 	Description() string
+	Start()
+}
+
+type Flt struct {
+	InQ		chan *gocv.Mat
+	OutQ	chan *gocv.Mat
+	Desc	string
+}
+
+func (f Flt) Description() string {
+	return f.description
+}
+
+func (f Flt) Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
+	f.InQ = inQ
+	f.OutQ = make(chan *gocv.Mat)
+	return f.OutQ
 }
 
 type FilterMap map[string]Filter
@@ -29,10 +46,3 @@ func (f FilterMap) List() (names []string) {
 	return names
 }
 
-type FilterDescription struct {
-	description string
-}
-
-func (d FilterDescription) Description() string {
-	return d.description
-}

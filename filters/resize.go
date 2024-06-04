@@ -12,7 +12,7 @@ type Resize struct {
 	Y      float64
 	Interp int
 
-	FilterDescription
+	Flt
 }
 
 var (
@@ -26,23 +26,18 @@ func init() {
 	Filters.Add("resize", fltResize)
 }
 
+
 func (flt Resize) Filter(img *gocv.Mat) *gocv.Mat {
 	gocv.Resize(*img, img, image.Point{}, flt.X, flt.Y, gocv.InterpolationArea)
 	return img
 }
 
-func (flt Resize) Process(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
-	outQ = make(chan *gocv.Mat)
-
-	var img *gocv.Mat
-
+func (flt Resize) Start() {
 	go func() {
 		for redeye.Running {
-			img = <-inQ
+			img = <-flt.InQ
 			img = flt.Filter(img)
-			outQ <- img
+			flt.OutQ <- img
 		}
 	}()
-
-	return outQ
 }

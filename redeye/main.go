@@ -54,7 +54,9 @@ func main() {
 	var img *gocv.Mat
 	imgQ := cam.Play()
 	outQ := filters.Pipes.Start(imgQ)
+
 	for redeye.Running {
+		fmt.Printf("Reading from outQ: %+v\n", outQ)
 		img, redeye.Running = <-outQ
 		window.IMShow(*img)
 		window.WaitKey(1)

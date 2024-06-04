@@ -23,6 +23,7 @@ func (p *Pipeline) AddFilter(fltname string) bool {
 }
 
 func (p *Pipeline) Start(imgQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
+	fmt.Println(" --------------------------------------- ")
 	fmt.Printf("imgQ: %p\n", imgQ)
 	inQ := imgQ
 	for name, flt := range p.Filters {
@@ -31,5 +32,6 @@ func (p *Pipeline) Start(imgQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
 		inQ = outQ
 	}
 	fmt.Printf("outQ: %p\n", outQ)
+	fmt.Println(" --------------------------------------- ")
 	return outQ
 }
