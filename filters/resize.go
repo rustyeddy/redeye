@@ -1,17 +1,16 @@
 package filters
 
 import (
+	"fmt"
 	"image"
 
 	"gocv.io/x/gocv"
-	"github.com/rustyeddy/redeye"
 )
 
 type Resize struct {
 	X      float64
 	Y      float64
 	Interp int
-
 	Flt
 }
 
@@ -20,24 +19,20 @@ var (
 )
 
 func init() {
-	fltResize.FilterDescription.description = "Resize image to fixed width, height"
-	fltResize.X = 2.0
-	fltResize.Y = 2.0
-	Filters.Add("resize", fltResize)
+	fltResize.description = "Resize image to fixed width, height"
+	fltResize.name = "resize"
+	Filters.Add(fltResize)
 }
 
+func (r Resize) Init(config string) {
+	r.X = 2.0
+	r.Y = 2.0
+	fmt.Printf("resize init: %f - %f\n", r.X, r.Y)
+}
 
-func (flt Resize) Filter(img *gocv.Mat) *gocv.Mat {
-	gocv.Resize(*img, img, image.Point{}, flt.X, flt.Y, gocv.InterpolationArea)
+func (r Resize) Filter(img *gocv.Mat) *gocv.Mat {
+	fmt.Printf("resize Filter: %f - %f\n", r.X, r.Y)	
+	gocv.Resize(*img, img, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
 	return img
 }
 
-func (flt Resize) Start() {
-	go func() {
-		for redeye.Running {
-			img = <-flt.InQ
-			img = flt.Filter(img)
-			flt.OutQ <- img
-		}
-	}()
-}

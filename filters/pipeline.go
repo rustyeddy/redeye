@@ -1,37 +1,53 @@
 package filters
 
 import (
-	"fmt"
 	"log"
-	"gocv.io/x/gocv"	
+	"strings"
 )
 
 type Pipeline struct {
-	Filters []Filter
+	Filters	[]Filter
 }
 
-var Pipes Pipeline
+func NewPipeline(pipestr string) *Pipeline {
+	pipeline := &Pipeline{}
 
-func (p *Pipeline) AddFilter(fltname string) bool {
-	flt, ok := Filters.Get(fltname)
-	if !ok {
-		log.Println("ERROR - Failed to find filter: ", fltname)
-		return ok
-	}
-	p.Filters = append(p.Filters, flt)
-	return ok
+	flts := strings.Split(pipestr, ":")
+
+	for _, fltname := range flts {
+		flt, ok := Filters.Get(fltname)
+		if !ok {
+			log.Println("ERROR - Failed to find filter: ", fltname)
+			return nil
+		}
+		flt.Init("")
+		pipeline.Filters = append(pipeline.Filters, flt)
+	}	
+	return pipeline
 }
 
-func (p *Pipeline) Start(imgQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
-	fmt.Println(" --------------------------------------- ")
-	fmt.Printf("imgQ: %p\n", imgQ)
-	inQ := imgQ
-	for name, flt := range p.Filters {
-		outQ = flt.Process(inQ)
-		fmt.Printf("%d - inQ %p -> outQ %p\n", name, inQ, outQ)
-		inQ = outQ
-	}
-	fmt.Printf("outQ: %p\n", outQ)
-	fmt.Println(" --------------------------------------- ")
-	return outQ
+type Pipe struct {
+	Filter
 }
+
+// func NewPipe(flt Filter, inQ chan *gocv.Mat) (p *Pipe) {
+// 	return &Pipe{
+// 		Filter: flt,
+// 	}
+// }
+
+// func (p *Pipe) Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
+// 	p.InQ = inQ
+// 	p.OutQ = make(chan *gocv.Mat)
+// 	return p.OutQ
+// }
+
+// func (p *Pipe) Start() {
+// 	go func() {
+// 		for redeye.Running {
+// 			img := <-p.InQ
+// 			img = p.Filter.Filter(img)
+// 			p.OutQ <- img
+// 		}
+// 	}()
+// }

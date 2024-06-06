@@ -19,7 +19,7 @@ type Webcam struct {
 	DeviceID int
 	Cap      *gocv.VideoCapture
 
-	running bool
+	ImgQ	chan *gocv.Mat
 }
 
 func GetWebcam(deviceID int) (cam *Webcam, err error) {
@@ -28,26 +28,24 @@ func GetWebcam(deviceID int) (cam *Webcam, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cam.ImgQ = make(chan *gocv.Mat)
 	return cam, nil
 }
 
-func (cam *Webcam) Play() (imgQ chan *gocv.Mat) {
-
+func (cam *Webcam) Play(img *gocv.Mat) {
 	Running = true
-	imgQ = make(chan *gocv.Mat)
-	img := gocv.NewMat() // This image will be leaked
 	go func() {
 		for Running {
 			time.Sleep(5 * time.Millisecond)
-			cam.Cap.Read(&img)
+			cam.Cap.Read(img)
 			if img.Empty() {
 				continue
 			}
-			imgQ <- &img
+			cam.ImgQ <- img
 		}
-		close(imgQ)
+		close(cam.ImgQ)
 	}()
-	return imgQ
 }
 
 func (cam *Webcam) Close() {

@@ -12,32 +12,31 @@ import (
 
 type FaceDetector struct {
 	XMLFile string
+	Flt
 
-	FilterDescription
+	color color.RGBA
+	classifier gocv.CascadeClassifier
 }
 
 var (
-	fltFaceDetect FaceDetector
+	faceDetect FaceDetector
 )
 
 func init() {
-	fltFaceDetect.FilterDescription.description = "Detect faces with XML Cascade"
-	Filters.Add("face-detect", fltFaceDetect)
+	faceDetect = FaceDetector{}
+	faceDetect.description = "Detect faces with XML Cascade"
+	faceDetect.name = "face-detect"
+	Filters.Add(faceDetect)
 }
 
-func (flt FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
-
-	return img
-}
-
-func (flt FaceDetector) Process(vidQ chan *gocv.Mat) (fltQ chan *gocv.Mat) {
+func (flt FaceDetector) Init(config string) {
 
 	// color for the rect when faces detected
-	blue := color.RGBA{0, 0, 255, 0}
+	flt.color = color.RGBA{0, 0, 255, 0}
 
 	// load classifier to recognize faces
-	classifier := gocv.NewCascadeClassifier()
-	defer classifier.Close()
+	flt.classifier = gocv.NewCascadeClassifier()
+	defer flt.classifier.Close()
 
 	flt.XMLFile = redeye.GetConfig().CascadeFile
 	// // fname := "data/haarcascade_frontalface_default.xml"
@@ -47,34 +46,28 @@ func (flt FaceDetector) Process(vidQ chan *gocv.Mat) (fltQ chan *gocv.Mat) {
 	// 	return
 	// }
 	log.Println("FLT XMLFILE: ", flt.XMLFile)
-	if !classifier.Load(flt.XMLFile) {
+	if !flt.classifier.Load(flt.XMLFile) {
 		log.Printf("Error reading cascade file: %v", flt.XMLFile)
 		return
 	}
+	
+}
 
-	fltQ = make(chan *gocv.Mat)
-	fmt.Printf("FLT Q: %+v\n", fltQ)
-	for {
-		img := <-vidQ
-		fmt.Printf("Facedetect image %p\n", img)
+func (flt FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
 
-		// detect faces
-		rects := classifier.DetectMultiScale(*img)
-		fmt.Printf("found %d faces\n", len(rects))
+	// detect faces
+	rects := flt.classifier.DetectMultiScale(*img)
+	fmt.Printf("found %d faces\n", len(rects))
 
-		// draw a rectangle around each face on the original image,
-		// along with text identifing as "Human"
-		for _, r := range rects {
-			gocv.Rectangle(img, r, blue, 3)
+	// draw a rectangle around each face on the original image,
+	// along with text identifing as "Human"
+	for _, r := range rects {
+		gocv.Rectangle(img, r, flt.color, 3)
 
-			size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
-			pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
-			gocv.PutText(img, "Human", pt, gocv.FontHersheyPlain, 1.2, blue, 2)
-		}
-
-		// show the image in the window, and wait 1 millisecond
-		fmt.Printf("SENDING IMAGE TO fltQ: %+v", fltQ)
-		fltQ <- img
+		size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
+		pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
+		gocv.PutText(img, "Human", pt, gocv.FontHersheyPlain, 1.2, flt.color, 2)
 	}
-	return fltQ
+
+	return img
 }

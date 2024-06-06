@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/rustyeddy/redeye"
 	"github.com/rustyeddy/redeye/filters"
@@ -34,11 +33,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Setup the pipeline for filtering
-	if config.Pipeline != "" {
-		setupPipeline(config.Pipeline)
-	}
-
 	// Open web cam for streaming video
 	cam, err := redeye.GetWebcam(config.VideoDevice)
 	if err != nil {
@@ -47,30 +41,25 @@ func main() {
 	}
 	defer cam.Close()
 
+	pipeline := filters.NewPipeline(config.Pipeline)
+
 	window := gocv.NewWindow("Redeye")
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
-	var img *gocv.Mat
-	imgQ := cam.Play()
-	outQ := filters.Pipes.Start(imgQ)
+	img := gocv.NewMat()
+	cam.Play(&img)
 
 	for redeye.Running {
-		fmt.Printf("Reading from outQ: %+v\n", outQ)
-		img, redeye.Running = <-outQ
+		img := <- cam.ImgQ
+		for _, flt := range pipeline.Filters {
+			fmt.Println(flt.Name())
+			img = flt.Filter(img)
+		}
+		
 		window.IMShow(*img)
 		window.WaitKey(1)
 	}
-}
-
-func setupPipeline(pipestr string) {
-	flts := strings.Split(pipestr, ":")
-	for _, flt := range flts {
-		fmt.Printf("filter: %s\n", flt)
-		filters.Pipes.AddFilter(flt)
-	}
-
-	fmt.Printf("PIPES: %v\n", filters.Pipes)
 }
 
 func listFilters() {
@@ -82,6 +71,6 @@ func listFilters() {
 			fmt.Println("Bad filtername name: ", n)
 			continue
 		}
-		fmt.Printf("%15s: %s\n", n, flt.Description())
+		fmt.Printf("%15s: %s\n", n, flt.Desc())
 	}
 }

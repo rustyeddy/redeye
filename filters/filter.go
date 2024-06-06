@@ -1,28 +1,29 @@
 package filters
 
-import "gocv.io/x/gocv"
+import (
+	"gocv.io/x/gocv"	
+)
 
 type Filter interface {
-	Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat)
-	Description() string
-	Start()
+	Name()	string
+	Desc()	string
+	Init(config string)	
+	Filter(*gocv.Mat) *gocv.Mat
 }
 
 type Flt struct {
-	InQ		chan *gocv.Mat
-	OutQ	chan *gocv.Mat
-	Desc	string
+	name		string
+	description	string
 }
 
-func (f Flt) Description() string {
+func (f Flt) Desc() string {
 	return f.description
 }
 
-func (f Flt) Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
-	f.InQ = inQ
-	f.OutQ = make(chan *gocv.Mat)
-	return f.OutQ
+func (f Flt) Name() string {
+	return f.name
 }
+
 
 type FilterMap map[string]Filter
 
@@ -30,8 +31,8 @@ var (
 	Filters FilterMap = make(map[string]Filter)
 )
 
-func (f FilterMap) Add(name string, flt Filter) {
-	f[name] = flt
+func (f FilterMap) Add(flt Filter) {
+	f[flt.Name()] = flt
 }
 
 func (f FilterMap) Get(name string) (flt Filter, ok bool) {
