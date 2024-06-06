@@ -47,16 +47,14 @@ func main() {
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
-	img := gocv.NewMat()
-	cam.Play(&img)
-
+	cam.Play()
 	for redeye.Running {
-		img := <- cam.ImgQ
+		img := <-cam.ImgQ
 		for _, flt := range pipeline.Filters {
 			fmt.Println(flt.Name())
 			img = flt.Filter(img)
 		}
-		
+
 		window.IMShow(*img)
 		window.WaitKey(1)
 	}

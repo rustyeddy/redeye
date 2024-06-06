@@ -43,7 +43,6 @@ func (flt *FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
 
 	// detect faces
 	rects := flt.classifier.DetectMultiScale(*img)
-	fmt.Printf("found %d faces\n", len(rects))
 
 	// draw a rectangle around each face on the original image,
 	// along with text identifing as "Human"
