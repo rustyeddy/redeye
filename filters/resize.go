@@ -1,7 +1,6 @@
 package filters
 
 import (
-	"fmt"
 	"image"
 
 	"gocv.io/x/gocv"
@@ -15,24 +14,20 @@ type Resize struct {
 }
 
 var (
-	fltResize Resize;
+	fltResize *Resize = new(Resize)
 )
 
 func init() {
-	fltResize.description = "Resize image to fixed width, height"
-	fltResize.name = "resize"
-	Filters.Add(fltResize)
+	Filters.Add("resize", fltResize)
 }
 
-func (r Resize) Init(config string) {
+func (r *Resize) Init(config string) {
+	r.description = "Resize image to fixed width, height"
 	r.X = 2.0
 	r.Y = 2.0
-	fmt.Printf("resize init: %f - %f\n", r.X, r.Y)
 }
 
-func (r Resize) Filter(img *gocv.Mat) *gocv.Mat {
-	fmt.Printf("resize Filter: %f - %f\n", r.X, r.Y)	
+func (r *Resize) Filter(img *gocv.Mat) *gocv.Mat {
 	gocv.Resize(*img, img, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
 	return img
 }
-

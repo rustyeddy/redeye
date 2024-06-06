@@ -1,12 +1,13 @@
 package filters
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
 
 type Pipeline struct {
-	Filters	[]Filter
+	Filters []Filter
 }
 
 func NewPipeline(pipestr string) *Pipeline {
@@ -22,32 +23,11 @@ func NewPipeline(pipestr string) *Pipeline {
 		}
 		flt.Init("")
 		pipeline.Filters = append(pipeline.Filters, flt)
-	}	
+		fmt.Printf("NewPipeline: %+v\n", flt)
+	}
 	return pipeline
 }
 
 type Pipe struct {
 	Filter
 }
-
-// func NewPipe(flt Filter, inQ chan *gocv.Mat) (p *Pipe) {
-// 	return &Pipe{
-// 		Filter: flt,
-// 	}
-// }
-
-// func (p *Pipe) Init(inQ chan *gocv.Mat) (outQ chan *gocv.Mat) {
-// 	p.InQ = inQ
-// 	p.OutQ = make(chan *gocv.Mat)
-// 	return p.OutQ
-// }
-
-// func (p *Pipe) Start() {
-// 	go func() {
-// 		for redeye.Running {
-// 			img := <-p.InQ
-// 			img = p.Filter.Filter(img)
-// 			p.OutQ <- img
-// 		}
-// 	}()
-// }

@@ -14,46 +14,32 @@ type FaceDetector struct {
 	XMLFile string
 	Flt
 
-	color color.RGBA
+	color      color.RGBA
 	classifier gocv.CascadeClassifier
 }
 
 var (
-	faceDetect FaceDetector
+	faceDetect = new(FaceDetector)
 )
 
 func init() {
-	faceDetect = FaceDetector{}
-	faceDetect.description = "Detect faces with XML Cascade"
-	faceDetect.name = "face-detect"
-	Filters.Add(faceDetect)
+	Filters.Add("face-detect", faceDetect)
 }
 
-func (flt FaceDetector) Init(config string) {
-
-	// color for the rect when faces detected
+func (flt *FaceDetector) Init(config string) {
+	flt.description = "Detect faces with XML Cascade"
 	flt.color = color.RGBA{0, 0, 255, 0}
-
-	// load classifier to recognize faces
 	flt.classifier = gocv.NewCascadeClassifier()
-	defer flt.classifier.Close()
-
 	flt.XMLFile = redeye.GetConfig().CascadeFile
-	// // fname := "data/haarcascade_frontalface_default.xml"
-	// xmlFile, err := os.ReadFile(redeye.Config.CascadeFile)
-	// if err != nil {
-	// 	log.Printf("Error reading cascade file: %v", xmlFile)
-	// 	return
-	// }
-	log.Println("FLT XMLFILE: ", flt.XMLFile)
+	fmt.Printf("XMLFILE: %s\n", flt.XMLFile)
 	if !flt.classifier.Load(flt.XMLFile) {
-		log.Printf("Error reading cascade file: %v", flt.XMLFile)
+		log.Printf("Error reading cascade file: %v", faceDetect.XMLFile)
 		return
 	}
-	
+
 }
 
-func (flt FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
+func (flt *FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
 
 	// detect faces
 	rects := flt.classifier.DetectMultiScale(*img)
