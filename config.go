@@ -13,15 +13,15 @@ type Configuration struct {
 	HTMLPath    string `json:"basepath"`   // html basepath
 	MQTTBroker  string `json:"broker"`     // MQTT Broker
 	VideoDevice int    `json:video-device` // Capture device
+	Imgname     string `json:imgname`      // Single image
 	CascadeFile string `json:cascade-file`
 	Pipeline    string `json:"pipeline"`
 
 	ListFilters bool `json:"list-filters"` // List filters
 
-	ID      string `json:"id"`
-	Thumb   string `json:"thumb"`
-	Debug   bool   `json:"debug"`
-
+	ID    string `json:"id"`
+	Thumb string `json:"thumb"`
+	Debug bool   `json:"debug"`
 }
 
 var (

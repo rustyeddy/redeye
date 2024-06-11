@@ -9,6 +9,10 @@ type Frame struct {
 	Meta []byte
 }
 
+func (f *Frame) Close() {
+	f.Mat.Close()
+}
+
 func NewFrame() (f Frame) {
 	f = Frame{}
 	m := gocv.NewMat()

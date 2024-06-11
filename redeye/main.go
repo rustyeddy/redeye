@@ -22,6 +22,7 @@ func init() {
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
+	flag.StringVar(&config.Imgname, "img", "", "Image name")
 }
 
 func main() {
@@ -33,23 +34,28 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Open web cam for streaming video
-	cam, err := redeye.GetCam(config.VideoDevice)
+	var imgsrc redeye.ImgSrc
+	var err error
+
+	if config.Imgname != "" {
+		imgsrc, err = redeye.GetImg(config.Imgname)
+	} else {
+		imgsrc, err = redeye.GetCam(config.VideoDevice)
+	}
 	if err != nil {
 		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
 		os.Exit(1)
 	}
-	defer cam.Close()
+	defer imgsrc.Close()
 
 	pipeline := filters.NewPipeline(config.Pipeline)
-
 	window := gocv.NewWindow("Redeye")
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
-	cam.Play()
-	for redeye.Running {
-		f := <-cam.FrameQ
+	frameQ := imgsrc.Play()
+	for imgsrc.IsRunning() {
+		f := <-frameQ
 		for _, flt := range pipeline.Filters {
 			f = flt.Filter(f)
 		}
