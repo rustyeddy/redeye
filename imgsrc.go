@@ -15,15 +15,15 @@ type ImgSrc interface {
 	Close()
 }
 
-type Webcam struct {
+type Cam struct {
 	DeviceID int
 	Cap      *gocv.VideoCapture
 
 	ImgQ chan *gocv.Mat
 }
 
-func GetWebcam(deviceID int) (cam *Webcam, err error) {
-	cam = &Webcam{DeviceID: deviceID}
+func GetCam(deviceID int) (cam *Cam, err error) {
+	cam = &Cam{DeviceID: deviceID}
 	cam.Cap, err = gocv.VideoCaptureDevice(deviceID)
 	if err != nil {
 		return nil, err
@@ -33,10 +33,9 @@ func GetWebcam(deviceID int) (cam *Webcam, err error) {
 	return cam, nil
 }
 
-func (cam *Webcam) Play() {
+func (cam *Cam) Play(imgring []gocv.Mat) {
 	Running = true
-	ringSize := 10
-	var imgring [10]gocv.Mat
+	ringSize := len(imgring)
 	for i := 0; i < ringSize; i++ {
 		imgring[i] = gocv.NewMat()
 	}
@@ -66,6 +65,6 @@ func (cam *Webcam) Play() {
 	}()
 }
 
-func (cam *Webcam) Close() {
+func (cam *Cam) Close() {
 	cam.Cap.Close()
 }

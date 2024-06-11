@@ -14,7 +14,11 @@ type Resize struct {
 }
 
 var (
-	fltResize *Resize = new(Resize)
+	fltResize *Resize = &Resize{
+		Flt: Flt{
+			name: "resize",
+		},
+	}
 )
 
 func init() {

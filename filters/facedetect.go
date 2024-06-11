@@ -19,7 +19,11 @@ type FaceDetector struct {
 }
 
 var (
-	faceDetect = new(FaceDetector)
+	faceDetect *FaceDetector = &FaceDetector{
+		Flt: Flt{
+			name: "face-detect",
+		},
+	}
 )
 
 func init() {

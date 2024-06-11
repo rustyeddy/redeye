@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// Open web cam for streaming video
-	cam, err := redeye.GetWebcam(config.VideoDevice)
+	cam, err := redeye.GetCam(config.VideoDevice)
 	if err != nil {
 		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
 		os.Exit(1)
@@ -47,11 +47,10 @@ func main() {
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
-	cam.Play()
+	cam.Play(imgRing)
 	for redeye.Running {
 		img := <-cam.ImgQ
 		for _, flt := range pipeline.Filters {
-			fmt.Println(flt.Name())
 			img = flt.Filter(img)
 		}
 
