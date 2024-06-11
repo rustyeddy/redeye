@@ -14,9 +14,9 @@ type ImgSrc interface {
 type Cam struct {
 	DeviceID int
 	Cap      *gocv.VideoCapture
-	Running  bool
 
-	FrameQ chan *Frame
+	FrameQ     chan *Frame
+	BufferSize int
 }
 
 var (
@@ -24,7 +24,10 @@ var (
 )
 
 func GetCam(deviceID int) (cam *Cam, err error) {
-	cam = &Cam{DeviceID: deviceID}
+	cam = &Cam{
+		DeviceID:   deviceID,
+		BufferSize: 10,
+	}
 	cam.Cap, err = gocv.VideoCaptureDevice(deviceID)
 	if err != nil {
 		return nil, err
@@ -36,24 +39,13 @@ func GetCam(deviceID int) (cam *Cam, err error) {
 
 func (cam *Cam) Play() {
 	Running = true
-	ringSize := 10
-	frames := make([]Frame, ringSize)
 
-	for i := 0; i < ringSize; i++ {
-		frames[i] = NewFrame()
-	}
-
+	frames := GetFrameBuffers(cam.BufferSize)
 	go func() {
-		i := 0
 		for Running {
 			time.Sleep(5 * time.Millisecond)
 
-			frame := &frames[i]
-			i++
-			if i == ringSize-1 {
-				i = 0
-			}
-
+			frame := frames.Next()
 			cam.Cap.Read(frame.Mat)
 			if frame.Mat.Empty() {
 				continue
@@ -62,7 +54,7 @@ func (cam *Cam) Play() {
 			if size[0] <= 0 || size[1] <= 0 {
 				continue
 			}
-			cam.FrameQ <- frame
+			cam.FrameQ <- &frame
 		}
 		close(cam.FrameQ)
 	}()
