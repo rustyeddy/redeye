@@ -6,10 +6,6 @@ import (
 	"gocv.io/x/gocv"
 )
 
-var (
-	Running = false
-)
-
 type ImgSrc interface {
 	Play() chan *gocv.Mat
 	Close()
@@ -18,9 +14,14 @@ type ImgSrc interface {
 type Cam struct {
 	DeviceID int
 	Cap      *gocv.VideoCapture
+	Running  bool
 
-	ImgQ chan *gocv.Mat
+	FrameQ chan *Frame
 }
+
+var (
+	Running = false
+)
 
 func GetCam(deviceID int) (cam *Cam, err error) {
 	cam = &Cam{DeviceID: deviceID}
@@ -29,15 +30,17 @@ func GetCam(deviceID int) (cam *Cam, err error) {
 		return nil, err
 	}
 
-	cam.ImgQ = make(chan *gocv.Mat)
+	cam.FrameQ = make(chan *Frame)
 	return cam, nil
 }
 
-func (cam *Cam) Play(imgring []gocv.Mat) {
+func (cam *Cam) Play() {
 	Running = true
-	ringSize := len(imgring)
+	ringSize := 10
+	frames := make([]Frame, ringSize)
+
 	for i := 0; i < ringSize; i++ {
-		imgring[i] = gocv.NewMat()
+		frames[i] = NewFrame()
 	}
 
 	go func() {
@@ -45,23 +48,23 @@ func (cam *Cam) Play(imgring []gocv.Mat) {
 		for Running {
 			time.Sleep(5 * time.Millisecond)
 
-			img := &imgring[i]
+			frame := &frames[i]
 			i++
 			if i == ringSize-1 {
 				i = 0
 			}
 
-			cam.Cap.Read(img)
-			if img.Empty() {
+			cam.Cap.Read(frame.Mat)
+			if frame.Mat.Empty() {
 				continue
 			}
-			size := img.Size()
+			size := frame.Mat.Size()
 			if size[0] <= 0 || size[1] <= 0 {
 				continue
 			}
-			cam.ImgQ <- img
+			cam.FrameQ <- frame
 		}
-		close(cam.ImgQ)
+		close(cam.FrameQ)
 	}()
 }
 

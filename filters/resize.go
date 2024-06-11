@@ -3,6 +3,7 @@ package filters
 import (
 	"image"
 
+	"github.com/rustyeddy/redeye"
 	"gocv.io/x/gocv"
 )
 
@@ -31,7 +32,7 @@ func (r *Resize) Init(config string) {
 	r.Y = 2.0
 }
 
-func (r *Resize) Filter(img *gocv.Mat) *gocv.Mat {
-	gocv.Resize(*img, img, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
-	return img
+func (r *Resize) Filter(frame *redeye.Frame) *redeye.Frame {
+	gocv.Resize(*frame.Mat, frame.Mat, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
+	return frame
 }

@@ -49,12 +49,12 @@ func main() {
 
 	cam.Play()
 	for redeye.Running {
-		img := <-cam.ImgQ
+		f := <-cam.FrameQ
 		for _, flt := range pipeline.Filters {
-			img = flt.Filter(img)
+			f = flt.Filter(f)
 		}
 
-		window.IMShow(*img)
+		window.IMShow(*f.Mat)
 		window.WaitKey(1)
 	}
 }

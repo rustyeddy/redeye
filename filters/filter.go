@@ -1,14 +1,12 @@
 package filters
 
-import (
-	"gocv.io/x/gocv"
-)
+import "github.com/rustyeddy/redeye"
 
 type Filter interface {
 	Name() string
 	Desc() string
 	Init(config string)
-	Filter(*gocv.Mat) *gocv.Mat
+	Filter(*redeye.Frame) *redeye.Frame
 }
 
 type Flt struct {

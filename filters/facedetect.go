@@ -43,20 +43,20 @@ func (flt *FaceDetector) Init(config string) {
 
 }
 
-func (flt *FaceDetector) Filter(img *gocv.Mat) *gocv.Mat {
+func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
 
 	// detect faces
-	rects := flt.classifier.DetectMultiScale(*img)
+	rects := flt.classifier.DetectMultiScale(*frame.Mat)
 
 	// draw a rectangle around each face on the original image,
 	// along with text identifing as "Human"
 	for _, r := range rects {
-		gocv.Rectangle(img, r, flt.color, 3)
+		gocv.Rectangle(frame.Mat, r, flt.color, 3)
 
 		size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
 		pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
-		gocv.PutText(img, "Human", pt, gocv.FontHersheyPlain, 1.2, flt.color, 2)
+		gocv.PutText(frame.Mat, "Human", pt, gocv.FontHersheyPlain, 1.2, flt.color, 2)
 	}
 
-	return img
+	return frame
 }
