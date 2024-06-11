@@ -47,7 +47,7 @@ func main() {
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
-	cam.Play(imgRing)
+	cam.Play()
 	for redeye.Running {
 		img := <-cam.ImgQ
 		for _, flt := range pipeline.Filters {
