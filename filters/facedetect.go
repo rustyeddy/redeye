@@ -21,7 +21,8 @@ type FaceDetector struct {
 var (
 	faceDetect *FaceDetector = &FaceDetector{
 		Flt: Flt{
-			name: "face-detect",
+			name:        "face-detect",
+			description: "Detect faces with XML cascades",
 		},
 	}
 )

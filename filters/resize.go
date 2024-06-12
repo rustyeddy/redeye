@@ -17,7 +17,8 @@ type Resize struct {
 var (
 	fltResize *Resize = &Resize{
 		Flt: Flt{
-			name: "resize",
+			name:        "resize",
+			description: "resize the give image",
 		},
 	}
 )
@@ -27,7 +28,6 @@ func init() {
 }
 
 func (r *Resize) Init(config string) {
-	r.description = "Resize image to fixed width, height"
 	r.X = 2.0
 	r.Y = 2.0
 }
