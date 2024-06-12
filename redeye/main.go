@@ -60,8 +60,9 @@ func main() {
 			f = flt.Filter(f)
 		}
 
+		fmt.Printf("mat: %d %d\n", f.Mat.Rows, f.Mat.Cols)
 		window.IMShow(*f.Mat)
-		window.WaitKey(1)
+		window.WaitKey(-1)
 	}
 }
 

@@ -96,7 +96,8 @@ type Img struct {
 }
 
 func GetImg(fname string) (img *Img, err error) {
-	m := gocv.IMRead(fname, gocv.IMReadUnchanged)
+	//m := gocv.IMRead(fname, gocv.IMReadUnchanged)
+	m := gocv.IMRead(fname, gocv.IMReadColor)
 	if m.Empty() {
 		return nil, fmt.Errorf("ERROR reading %s", fname)
 	}
@@ -113,16 +114,18 @@ func (i *Img) IsRunning() bool {
 
 func (i *Img) Play() chan *Frame {
 	i.frameQ = make(chan *Frame)
-
-	i.frame = &Frame{}
 	i.running = true
 
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		i.frameQ <- i.frame
+		i.running = false
+	}()
 	return i.frameQ
 }
 
 func (i *Img) Close() {
 	i.running = false
-	i.Close()
 	i.frame.Mat.Close()
 	close(i.frameQ)
 }

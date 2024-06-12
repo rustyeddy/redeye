@@ -57,6 +57,5 @@ func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
 		pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
 		gocv.PutText(frame.Mat, "Human", pt, gocv.FontHersheyPlain, 1.2, flt.color, 2)
 	}
-
 	return frame
 }
