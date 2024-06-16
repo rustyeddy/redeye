@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/rustyeddy/redeye"
@@ -19,6 +20,7 @@ var (
 func init() {
 	config = redeye.GetConfig()
 	flag.StringVar(&config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
+	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:8080", "Default http addr 8080")
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
@@ -34,6 +36,7 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Set up the image source
 	var imgsrc redeye.ImgSrc
 	var err error
 
@@ -48,21 +51,31 @@ func main() {
 	}
 	defer imgsrc.Close()
 
+	// Set up the pipeline
 	pipeline := filters.NewPipeline(config.Pipeline)
 	window := gocv.NewWindow("Redeye")
 	window.ResizeWindow(640, 480)
 	defer window.Close()
 
+	// Create the MJPEG Stream, should this just be
+	// a filter?
+	mjpeg := redeye.NewMJPEG()
+	http.Handle("/mjpeg", mjpeg)
+	server := &http.Server{
+		Addr: config.HTTPAddr,
+	}
+
+	go server.ListenAndServe()
 	frameQ := imgsrc.Play()
+	mjpegQ := mjpeg.Play()
 	for imgsrc.IsRunning() {
 		f := <-frameQ
 		for _, flt := range pipeline.Filters {
 			f = flt.Filter(f)
 		}
-
-		fmt.Printf("mat: %d %d\n", f.Mat.Rows, f.Mat.Cols)
+		mjpegQ <- f
 		window.IMShow(*f.Mat)
-		window.WaitKey(-1)
+		window.WaitKey(10)
 	}
 }
 

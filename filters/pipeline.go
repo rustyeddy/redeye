@@ -19,7 +19,7 @@ func NewPipeline(pipestr string) *Pipeline {
 		flt, ok := Filters.Get(fltname)
 		if !ok {
 			log.Println("ERROR - Failed to find filter: ", fltname)
-			return nil
+			continue
 		}
 		flt.Init("")
 		pipeline.Filters = append(pipeline.Filters, flt)
