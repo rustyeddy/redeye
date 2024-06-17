@@ -1,8 +1,6 @@
 package redeye
 
 import (
-	"fmt"
-
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
 )
@@ -25,13 +23,10 @@ func (m *MJPEG) Play() chan *Frame {
 			frame := <-frameQ
 			img := frame.Mat
 
-			fmt.Println("got a frame")
-
 			// Can we reuse the buffer?
 			buf, _ := gocv.IMEncode(".jpg", *img)
 			m.Stream.UpdateJPEG(buf.GetBytes())
 			buf.Close()
-			fmt.Println("done witho frame")
 		}
 	}()
 	return frameQ
