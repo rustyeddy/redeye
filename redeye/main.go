@@ -9,8 +9,6 @@ import (
 
 	"github.com/rustyeddy/redeye"
 	"github.com/rustyeddy/redeye/filters"
-
-	"gocv.io/x/gocv"
 )
 
 var (
@@ -36,8 +34,41 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Set up the image source
-	var imgsrc redeye.ImgSrc
+	// Determine the imgsrc
+	imgsrc := startImgSrc(config)
+	defer imgsrc.Close()
+
+	// Set up the pipeline
+	pipeline := filters.NewPipeline(config.Pipeline)
+	defer pipeline.Close()
+
+	// Start the outputs windows and MJPEG server
+	w := startWindows()
+	defer w.Close()
+
+	mjpeg := startMJPEG()
+	defer mjpeg.Close()
+
+	startServer()
+
+	var outputs []chan *redeye.Frame
+	outputs = append(outputs, mjpeg.Play())
+	outputs = append(outputs, w.Play())
+
+	frameQ := imgsrc.Play()
+	for imgsrc.IsRunning() {
+		f := <-frameQ
+		for _, flt := range pipeline.Filters {
+			f = flt.Filter(f)
+		}
+
+		for _, outQ := range outputs {
+			outQ <- f
+		}
+	}
+}
+
+func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 	var err error
 
 	if config.Imgname != "" {
@@ -49,34 +80,29 @@ func main() {
 		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
 		os.Exit(1)
 	}
-	defer imgsrc.Close()
+	return imgsrc
+}
 
-	// Set up the pipeline
-	pipeline := filters.NewPipeline(config.Pipeline)
-	window := gocv.NewWindow("Redeye")
-	window.ResizeWindow(640, 480)
-	defer window.Close()
+func startWindows() (w *redeye.Window) {
+	w = redeye.NewWindow("Redeye")
+	return w
+}
 
-	// Create the MJPEG Stream, should this just be
-	// a filter?
-	mjpeg := redeye.NewMJPEG()
-	http.Handle("/mjpeg", mjpeg)
+func startServer() *http.Server {
 	server := &http.Server{
 		Addr: config.HTTPAddr,
 	}
 
 	go server.ListenAndServe()
-	frameQ := imgsrc.Play()
-	mjpegQ := mjpeg.Play()
-	for imgsrc.IsRunning() {
-		f := <-frameQ
-		for _, flt := range pipeline.Filters {
-			f = flt.Filter(f)
-		}
-		mjpegQ <- f
-		window.IMShow(*f.Mat)
-		window.WaitKey(10)
-	}
+	return server
+}
+
+func startMJPEG() *redeye.MJPEG {
+	// Create the MJPEG Stream, should this just be
+	// a filter?
+	mjpeg := redeye.NewMJPEG()
+	http.Handle("/mjpeg", mjpeg)
+	return mjpeg
 }
 
 func listFilters() {

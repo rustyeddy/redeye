@@ -1,7 +1,6 @@
 package filters
 
 import (
-	"fmt"
 	"log"
 	"strings"
 )
@@ -23,9 +22,15 @@ func NewPipeline(pipestr string) *Pipeline {
 		}
 		flt.Init("")
 		pipeline.Filters = append(pipeline.Filters, flt)
-		fmt.Printf("NewPipeline: %+v\n", flt)
 	}
 	return pipeline
+}
+
+func (p *Pipeline) Close() error {
+	for _, fltname := range p.Filters {
+		_ = fltname
+	}
+	return nil
 }
 
 type Pipe struct {

@@ -31,3 +31,7 @@ func (m *MJPEG) Play() chan *Frame {
 	}()
 	return frameQ
 }
+
+func (m *MJPEG) Close() error {
+	return m.Close()
+}
