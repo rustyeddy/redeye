@@ -12,7 +12,7 @@ import (
 type ImgSrc interface {
 	Play() chan *Frame
 	IsRunning() bool
-	Close()
+	Close() error
 }
 
 // Cam is a concrete datatype for a camera, the Cam struct will obtain
@@ -77,10 +77,11 @@ func (cam *Cam) Play() chan *Frame {
 
 // Close stops reading images from the capture device and closes down
 // the FrameQ channel
-func (cam *Cam) Close() {
+func (cam *Cam) Close() error {
 	cam.running = false
 	cam.Close()
 	close(cam.frameQ)
+	return nil
 }
 
 // Img will read a single file image and queue it up on the
@@ -124,8 +125,61 @@ func (i *Img) Play() chan *Frame {
 	return i.frameQ
 }
 
-func (i *Img) Close() {
+func (i *Img) Close() error {
 	i.running = false
 	i.frame.Mat.Close()
 	close(i.frameQ)
+
+	return nil
+}
+
+type VideoFile struct {
+	*gocv.VideoCapture
+
+	fname      string
+	frameQ     chan *Frame
+	running    bool
+	bufferSize int
+}
+
+func GetVideo(fname string) (vid *VideoFile, err error) {
+	vid = &VideoFile{}
+	vid.VideoCapture, err = gocv.VideoCaptureFile(fname)
+	vid.bufferSize = 5
+
+	return vid, err
+}
+
+func (v *VideoFile) IsRunning() bool {
+	return v.running
+}
+
+func (v *VideoFile) Play() chan *Frame {
+	v.frameQ = make(chan *Frame)
+	v.running = true
+
+	frames := GetFrameBuffers(v.bufferSize)
+	go func() {
+		for v.running {
+			time.Sleep(10 * time.Millisecond)
+
+			frame := frames.Next()
+			v.VideoCapture.Read(frame.Mat)
+			if frame.Mat.Empty() {
+				continue
+			}
+			size := frame.Mat.Size()
+			if size[0] <= 0 || size[1] <= 0 {
+				continue
+			}
+			v.frameQ <- &frame
+		}
+		close(v.frameQ)
+	}()
+
+	return v.frameQ
+}
+
+func (v *VideoFile) Close() error {
+	return v.VideoCapture.Close()
 }

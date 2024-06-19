@@ -22,7 +22,8 @@ func init() {
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
-	flag.StringVar(&config.Imgname, "img", "", "Image name")
+	flag.StringVar(&config.Image, "image", "", "Image name")
+	flag.StringVar(&config.Video, "video", "", "Video Name")
 }
 
 func main() {
@@ -71,8 +72,10 @@ func main() {
 func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 	var err error
 
-	if config.Imgname != "" {
-		imgsrc, err = redeye.GetImg(config.Imgname)
+	if config.Image != "" {
+		imgsrc, err = redeye.GetImg(config.Image)
+	} else if config.Video != "" {
+		imgsrc, err = redeye.GetVideo(config.Video)
 	} else {
 		imgsrc, err = redeye.GetCam(config.VideoDevice)
 	}

@@ -13,7 +13,8 @@ type Configuration struct {
 	HTMLPath    string `json:"basepath"`   // html basepath
 	MQTTBroker  string `json:"broker"`     // MQTT Broker
 	VideoDevice int    `json:video-device` // Capture device
-	Imgname     string `json:imgname`      // Single image
+	Image       string `json:image`        // Single image
+	Video       string `json:video`
 	CascadeFile string `json:cascade-file`
 	Pipeline    string `json:"pipeline"`
 
