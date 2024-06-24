@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/rustyeddy/redeye"
-	"github.com/rustyeddy/redeye/filters"
 )
 
 var (
@@ -21,7 +20,7 @@ func init() {
 	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:8080", "Default http addr 8080")
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
-	flag.IntVar(&config.VideoDevice, "video-device", 0, "Video capture device. default 0")
+	flag.IntVar(&config.VideoDevice, "device", 0, "Video capture device. default 0")
 	flag.StringVar(&config.Image, "image", "", "Image name")
 	flag.StringVar(&config.Video, "video", "", "Video Name")
 }
@@ -40,11 +39,11 @@ func main() {
 	defer imgsrc.Close()
 
 	// Set up the pipeline
-	pipeline := filters.NewPipeline(config.Pipeline)
+	pipeline := redeye.NewPipeline(config.Pipeline)
 	defer pipeline.Close()
 
 	// Start the outputs windows and MJPEG server
-	w := startWindows()
+	w := startWindows(config)
 	defer w.Close()
 
 	mjpeg := startMJPEG()
@@ -62,7 +61,6 @@ func main() {
 		for _, flt := range pipeline.Filters {
 			f = flt.Filter(f)
 		}
-
 		for _, outQ := range outputs {
 			outQ <- f
 		}
@@ -72,8 +70,10 @@ func main() {
 func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 	var err error
 
+	config.WaitTime = 10
 	if config.Image != "" {
 		imgsrc, err = redeye.GetImg(config.Image)
+		config.WaitTime = 0
 	} else if config.Video != "" {
 		imgsrc, err = redeye.GetVideo(config.Video)
 	} else {
@@ -83,11 +83,13 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
 		os.Exit(1)
 	}
+	fmt.Println("returning waitTime", config.WaitTime)
 	return imgsrc
 }
 
-func startWindows() (w *redeye.Window) {
+func startWindows(config *redeye.Configuration) (w *redeye.Window) {
 	w = redeye.NewWindow("Redeye")
+	w.WaitTime = config.WaitTime
 	return w
 }
 
@@ -110,9 +112,9 @@ func startMJPEG() *redeye.MJPEG {
 
 func listFilters() {
 	fmt.Println("Filters")
-	names := filters.Filters.List()
+	names := redeye.Filters.List()
 	for _, n := range names {
-		flt, ok := filters.Filters.Get(n)
+		flt, ok := redeye.Filters.Get(n)
 		if !ok {
 			fmt.Println("Bad filtername name: ", n)
 			continue

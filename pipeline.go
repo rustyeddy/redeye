@@ -1,4 +1,4 @@
-package filters
+package redeye
 
 import (
 	"log"
@@ -11,9 +11,11 @@ type Pipeline struct {
 
 func NewPipeline(pipestr string) *Pipeline {
 	pipeline := &Pipeline{}
+	if pipestr == "" {
+		return pipeline
+	}
 
 	flts := strings.Split(pipestr, ":")
-
 	for _, fltname := range flts {
 		flt, ok := Filters.Get(fltname)
 		if !ok {

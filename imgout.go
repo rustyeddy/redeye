@@ -1,6 +1,10 @@
 package redeye
 
-import "gocv.io/x/gocv"
+import (
+	"fmt"
+
+	"gocv.io/x/gocv"
+)
 
 type ImOut interface {
 	Play() chan *Frame
@@ -9,8 +13,9 @@ type ImOut interface {
 
 type Window struct {
 	*gocv.Window
-
 	running bool
+
+	WaitTime int
 }
 
 func NewWindow(name string) (w *Window) {
@@ -27,8 +32,10 @@ func (w *Window) Play() (outQ chan *Frame) {
 	go func() {
 		for w.running {
 			f := <-outQ
+			fmt.Println("Wait: ", w.WaitTime)
+
 			w.IMShow(*f.Mat)
-			w.WaitKey(10)
+			w.WaitKey(w.WaitTime)
 		}
 	}()
 

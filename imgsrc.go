@@ -42,6 +42,7 @@ func GetCam(deviceID int) (cam *Cam, err error) {
 	return cam, nil
 }
 
+// IsRunning will tell us if the camera is active delivering images
 func (cam *Cam) IsRunning() bool {
 	return cam.running
 }
@@ -96,6 +97,8 @@ type Img struct {
 	running bool
 }
 
+// GetImg opens the image file fname and returns the image
+// processing and/or viewing.
 func GetImg(fname string) (img *Img, err error) {
 	//m := gocv.IMRead(fname, gocv.IMReadUnchanged)
 	m := gocv.IMRead(fname, gocv.IMReadColor)
@@ -109,10 +112,13 @@ func GetImg(fname string) (img *Img, err error) {
 	return img, nil
 }
 
+// IsRunning tells us if the image is being displayed, it
+// also fulfills the ImgSrc interface
 func (i *Img) IsRunning() bool {
 	return i.running
 }
 
+// Play will copy the opened frame into the pipeline
 func (i *Img) Play() chan *Frame {
 	i.frameQ = make(chan *Frame)
 	i.running = true
@@ -120,11 +126,12 @@ func (i *Img) Play() chan *Frame {
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		i.frameQ <- i.frame
-		i.running = false
+		// i.running = false
 	}()
 	return i.frameQ
 }
 
+// Close the image
 func (i *Img) Close() error {
 	i.running = false
 	i.frame.Mat.Close()
@@ -133,6 +140,8 @@ func (i *Img) Close() error {
 	return nil
 }
 
+// VideoFile does as it's name indicates, reads a video from
+// a file and runs it through the pipeline
 type VideoFile struct {
 	*gocv.VideoCapture
 
@@ -142,6 +151,8 @@ type VideoFile struct {
 	bufferSize int
 }
 
+// GetVideo reads the file specified by the fname and prepares
+// to run it through
 func GetVideo(fname string) (vid *VideoFile, err error) {
 	vid = &VideoFile{}
 	vid.VideoCapture, err = gocv.VideoCaptureFile(fname)

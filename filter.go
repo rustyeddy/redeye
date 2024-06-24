@@ -1,12 +1,10 @@
-package filters
-
-import "github.com/rustyeddy/redeye"
+package redeye
 
 type Filter interface {
 	Name() string
 	Desc() string
 	Init(config string)
-	Filter(*redeye.Frame) *redeye.Frame
+	Filter(*Frame) *Frame
 }
 
 type Flt struct {

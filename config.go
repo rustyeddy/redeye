@@ -17,6 +17,7 @@ type Configuration struct {
 	Video       string `json:video`
 	CascadeFile string `json:cascade-file`
 	Pipeline    string `json:"pipeline"`
+	WaitTime    int    `json"wait-time"`
 
 	ListFilters bool `json:"list-filters"` // List filters
 

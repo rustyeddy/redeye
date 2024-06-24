@@ -7,6 +7,7 @@ import (
 
 type MJPEG struct {
 	*mjpeg.Stream
+	opened bool
 }
 
 func NewMJPEG() (m *MJPEG) {
@@ -16,7 +17,9 @@ func NewMJPEG() (m *MJPEG) {
 }
 
 func (m *MJPEG) Play() chan *Frame {
+	// need to close frameQ
 	frameQ := make(chan *Frame)
+	m.opened = true
 
 	go func() {
 		for {
@@ -33,5 +36,10 @@ func (m *MJPEG) Play() chan *Frame {
 }
 
 func (m *MJPEG) Close() error {
-	return m.Close()
+	if m.opened {
+
+		m.opened = false
+		return m.Close()
+	}
+	return nil
 }
