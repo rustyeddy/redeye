@@ -38,13 +38,11 @@ func (r *Resize) Init(config string) {
 }
 
 func (r *Resize) Filter(frame *redeye.Frame) *redeye.Frame {
-	fmt.Printf("resize: x: %f, y: %f\n", r.X, r.Y)
 	gocv.Resize(*frame.Mat, frame.Mat, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
 	return frame
 }
 
 func (res *Resize) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	println("GOT RESIZE")
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&res)
 	if err != nil {
