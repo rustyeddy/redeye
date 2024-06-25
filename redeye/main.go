@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/rustyeddy/redeye"
+	"github.com/rustyeddy/redeye/filters"
 )
 
 var (
@@ -39,7 +40,7 @@ func main() {
 	defer imgsrc.Close()
 
 	// Set up the pipeline
-	pipeline := redeye.NewPipeline(config.Pipeline)
+	pipeline := filters.NewPipeline(config.Pipeline)
 	defer pipeline.Close()
 
 	// Start the outputs windows and MJPEG server
@@ -112,9 +113,9 @@ func startMJPEG() *redeye.MJPEG {
 
 func listFilters() {
 	fmt.Println("Filters")
-	names := redeye.Filters.List()
+	names := filters.Filters.List()
 	for _, n := range names {
-		flt, ok := redeye.Filters.Get(n)
+		flt, ok := filters.Filters.Get(n)
 		if !ok {
 			fmt.Println("Bad filtername name: ", n)
 			continue

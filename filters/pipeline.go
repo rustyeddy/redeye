@@ -1,4 +1,4 @@
-package redeye
+package filters
 
 import (
 	"log"

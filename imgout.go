@@ -1,8 +1,6 @@
 package redeye
 
 import (
-	"fmt"
-
 	"gocv.io/x/gocv"
 )
 
@@ -32,8 +30,6 @@ func (w *Window) Play() (outQ chan *Frame) {
 	go func() {
 		for w.running {
 			f := <-outQ
-			fmt.Println("Wait: ", w.WaitTime)
-
 			w.IMShow(*f.Mat)
 			w.WaitKey(w.WaitTime)
 		}

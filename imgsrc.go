@@ -126,7 +126,6 @@ func (i *Img) Play() chan *Frame {
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		i.frameQ <- i.frame
-		// i.running = false
 	}()
 	return i.frameQ
 }
