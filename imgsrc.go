@@ -23,6 +23,7 @@ type Cam struct {
 
 	devID   int
 	cap     *gocv.VideoCapture
+	frames  *FrameBuffers
 	frameQ  chan *Frame
 	running bool
 }
@@ -54,12 +55,12 @@ func (cam *Cam) Play() chan *Frame {
 	cam.running = true
 	cam.frameQ = make(chan *Frame)
 
-	frames := GetFrameBuffers(cam.BufferSize)
+	cam.frames = GetFrameBuffers(cam.BufferSize)
 	go func() {
 		for cam.running {
 			time.Sleep(5 * time.Millisecond)
 
-			frame := frames.Next()
+			frame := cam.frames.Next()
 			cam.cap.Read(frame.Mat)
 			if frame.Mat.Empty() {
 				continue
@@ -81,6 +82,7 @@ func (cam *Cam) Play() chan *Frame {
 func (cam *Cam) Close() error {
 	cam.running = false
 	cam.cap.Close()
+	cam.frames.Close()
 	return nil
 }
 
@@ -105,9 +107,8 @@ func GetImg(fname string) (img *Img, err error) {
 		return nil, fmt.Errorf("ERROR reading %s", fname)
 	}
 
-	f := NewFrame()
+	f := Frame{Mat: &m}
 	img = &Img{Filename: fname, frame: &f}
-	img.frame.Mat = &m
 	return img, nil
 }
 
@@ -145,6 +146,7 @@ type VideoFile struct {
 	*gocv.VideoCapture
 
 	fname      string
+	frames     *FrameBuffers
 	frameQ     chan *Frame
 	running    bool
 	bufferSize int
@@ -168,12 +170,12 @@ func (v *VideoFile) Play() chan *Frame {
 	v.frameQ = make(chan *Frame)
 	v.running = true
 
-	frames := GetFrameBuffers(v.bufferSize)
+	v.frames = GetFrameBuffers(v.bufferSize)
 	go func() {
 		for v.running {
 			time.Sleep(10 * time.Millisecond)
 
-			frame := frames.Next()
+			frame := v.frames.Next()
 			v.VideoCapture.Read(frame.Mat)
 			if frame.Mat.Empty() {
 				continue
@@ -192,5 +194,6 @@ func (v *VideoFile) Play() chan *Frame {
 
 func (v *VideoFile) Close() error {
 	v.running = false
+	v.frames.Close()
 	return v.VideoCapture.Close()
 }

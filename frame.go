@@ -46,3 +46,9 @@ func (frames *FrameBuffers) Next() Frame {
 	}
 	return frames.frames[frames.idx]
 }
+
+func (frames *FrameBuffers) Close() {
+	for i := range frames.frames {
+		frames.frames[i].Mat.Close()
+	}
+}
