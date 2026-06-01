@@ -77,7 +77,10 @@ func main() {
 		select {
 		case <-done:
 			return
-		case f := <-frameQ:
+		case f, ok := <-frameQ:
+			if !ok {
+				return
+			}
 			for _, flt := range pipeline.Filters {
 				f = flt.Filter(f)
 			}
