@@ -18,10 +18,14 @@ var apiRouteMethods = map[string][]string{
 }
 
 func init() {
+	registerAPIRoutes(http.DefaultServeMux)
+}
+
+func registerAPIRoutes(mux *http.ServeMux) {
 	for path, methods := range apiRouteMethods {
 		path := path
 		methods := append([]string(nil), methods...)
-		http.Handle(path, notImplementedHandler(path, methods))
+		mux.Handle(path, notImplementedHandler(path, methods))
 	}
 }
 
