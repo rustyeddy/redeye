@@ -23,6 +23,12 @@ func NewWindow(name string) (w *Window) {
 	return w
 }
 
+func (w *Window) Close() error {
+	w.running = false
+	w.Window.Close()
+	return nil
+}
+
 func (w *Window) Play() (outQ chan *Frame) {
 	outQ = make(chan *Frame)
 	w.running = true

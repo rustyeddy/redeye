@@ -80,8 +80,7 @@ func (cam *Cam) Play() chan *Frame {
 // the FrameQ channel
 func (cam *Cam) Close() error {
 	cam.running = false
-	cam.Close()
-	close(cam.frameQ)
+	cam.cap.Close()
 	return nil
 }
 
@@ -126,6 +125,7 @@ func (i *Img) Play() chan *Frame {
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		i.frameQ <- i.frame
+		i.running = false
 	}()
 	return i.frameQ
 }
@@ -191,5 +191,6 @@ func (v *VideoFile) Play() chan *Frame {
 }
 
 func (v *VideoFile) Close() error {
+	v.running = false
 	return v.VideoCapture.Close()
 }

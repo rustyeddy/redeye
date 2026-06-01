@@ -25,7 +25,7 @@ func (flt *ColorDetector) Init(config string) {
 
 }
 
+// TODO: not yet implemented
 func (flt *ColorDetector) Filter(frame *redeye.Frame) *redeye.Frame {
-
 	return frame
 }
