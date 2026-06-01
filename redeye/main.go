@@ -128,6 +128,8 @@ func startWindows(config *redeye.Configuration) (w *redeye.Window) {
 }
 
 func startServer() *http.Server {
+	redeye.RegisterAPIRoutes(http.DefaultServeMux)
+
 	server := &http.Server{
 		Addr: config.HTTPAddr,
 	}
