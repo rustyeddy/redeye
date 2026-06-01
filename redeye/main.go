@@ -30,6 +30,10 @@ func init() {
 }
 
 func main() {
+	if err := config.LoadDefault(); err != nil {
+		log.Fatalf("failed to load default config: %+v", err)
+	}
+
 	flag.Parse()
 
 	// list filters and exit if command list says so
