@@ -17,11 +17,11 @@ var apiRouteMethods = map[string][]string{
 	"/api/storage/snapshot":  {http.MethodPost},
 }
 
-func init() {
-	registerAPIRoutes(http.DefaultServeMux)
-}
+func RegisterAPIRoutes(mux *http.ServeMux) {
+	if mux == nil {
+		mux = http.DefaultServeMux
+	}
 
-func registerAPIRoutes(mux *http.ServeMux) {
 	for path, methods := range apiRouteMethods {
 		path := path
 		methods := append([]string(nil), methods...)
@@ -37,7 +37,7 @@ func notImplementedHandler(path string, methods []string) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := allowed[r.Method]; !ok {
-			w.Header().Set("Allow", strings.Join(methods, ", "))
+			w.Header().Set("Allow", strings.Join(methods, ","))
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}

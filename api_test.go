@@ -11,7 +11,7 @@ import (
 
 func TestAPIRoutesReturnNotImplementedForSupportedMethods(t *testing.T) {
 	mux := http.NewServeMux()
-	registerAPIRoutes(mux)
+	RegisterAPIRoutes(mux)
 
 	for path, methods := range apiRouteMethods {
 		for _, method := range methods {
@@ -29,7 +29,7 @@ func TestAPIRoutesReturnNotImplementedForSupportedMethods(t *testing.T) {
 
 func TestAPIRoutesRejectUnsupportedMethods(t *testing.T) {
 	mux := http.NewServeMux()
-	registerAPIRoutes(mux)
+	RegisterAPIRoutes(mux)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/camera/play", nil)
 	rr := httptest.NewRecorder()
