@@ -37,7 +37,7 @@ func notImplementedHandler(path string, methods []string) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := allowed[r.Method]; !ok {
-			w.Header().Set("Allow", strings.Join(methods, ","))
+			w.Header().Set("Allow", strings.Join(methods, ", "))
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
