@@ -29,12 +29,5 @@ func NewPipeline(pipestr string) *Pipeline {
 }
 
 func (p *Pipeline) Close() error {
-	for _, fltname := range p.Filters {
-		_ = fltname
-	}
 	return nil
-}
-
-type Pipe struct {
-	Filter
 }

@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/rustyeddy/redeye"
 	"github.com/rustyeddy/redeye/filters"
@@ -52,18 +55,37 @@ func main() {
 
 	startServer()
 
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	done := make(chan struct{})
+	go func() {
+		<-sigCh
+		log.Println("shutting down ...")
+		close(done)
+	}()
+
 	var outputs []chan *redeye.Frame
 	outputs = append(outputs, mjpeg.Play())
 	outputs = append(outputs, w.Play())
 
 	frameQ := imgsrc.Play()
 	for imgsrc.IsRunning() {
-		f := <-frameQ
-		for _, flt := range pipeline.Filters {
-			f = flt.Filter(f)
-		}
-		for _, outQ := range outputs {
-			outQ <- f
+		select {
+		case <-done:
+			return
+		case f := <-frameQ:
+			for _, flt := range pipeline.Filters {
+				f = flt.Filter(f)
+			}
+			var wg sync.WaitGroup
+			for _, outQ := range outputs {
+				wg.Add(1)
+				go func(ch chan *redeye.Frame) {
+					defer wg.Done()
+					ch <- f
+				}(outQ)
+			}
+			wg.Wait()
 		}
 	}
 }
@@ -84,7 +106,6 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
 		os.Exit(1)
 	}
-	fmt.Println("returning waitTime", config.WaitTime)
 	return imgsrc
 }
 
@@ -112,7 +133,6 @@ func startMJPEG() *redeye.MJPEG {
 }
 
 func listFilters() {
-	fmt.Println("Filters")
 	names := filters.Filters.List()
 	for _, n := range names {
 		flt, ok := filters.Filters.Get(n)

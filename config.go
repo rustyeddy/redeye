@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"net/http"
 )
 
@@ -12,12 +12,12 @@ type Configuration struct {
 	HTTPAddr    string `json:"addr"`       // http address and port
 	HTMLPath    string `json:"basepath"`   // html basepath
 	MQTTBroker  string `json:"broker"`     // MQTT Broker
-	VideoDevice int    `json:video-device` // Capture device
-	Image       string `json:image`        // Single image
-	Video       string `json:video`
-	CascadeFile string `json:cascade-file`
+	VideoDevice int    `json:"video-device"` // Capture device
+	Image       string `json:"image"`        // Single image
+	Video       string `json:"video"`
+	CascadeFile string `json:"cascade-file"`
 	Pipeline    string `json:"pipeline"`
-	WaitTime    int    `json"wait-time"`
+	WaitTime    int    `json:"wait-time"`
 
 	ListFilters bool `json:"list-filters"` // List filters
 
@@ -41,7 +41,7 @@ func (c *Configuration) Save(path string) (err error) {
 		return fmt.Errorf("Config Save [%s] failed json.Marshal config [%w]", path, err)
 	}
 
-	err = ioutil.WriteFile(path, buf, 0644)
+	err = os.WriteFile(path, buf, 0644)
 	if err != nil {
 		return fmt.Errorf("Config Save [%s] failed to save file: [%w]", path, err)
 	}

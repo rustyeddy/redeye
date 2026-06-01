@@ -36,10 +36,6 @@ func (m *MJPEG) Play() chan *Frame {
 }
 
 func (m *MJPEG) Close() error {
-	if m.opened {
-
-		m.opened = false
-		return m.Close()
-	}
+	m.opened = false
 	return nil
 }
