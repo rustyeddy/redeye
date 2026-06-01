@@ -12,15 +12,16 @@ var Config = struct {
 }{}
 
 func TestTLV(t *testing.T) {
+	const tlvLength = 4
 	tlv := NewTLV(CMDPlay, 4)
 	require.Equal(t, CMDPlay, tlv.Type())
-	require.Equal(t, 4, tlv.Len())
+	require.Equal(t, tlvLength, tlv.Len())
 
 	ty, l := tlv.TypeLen()
 	assert.Equal(t, int(CMDPlay), ty)
-	assert.Equal(t, 4, l)
-	assert.Equal(t, 2, len(tlv.Value()))
-	assert.Equal(t, string([]byte{CMDPlay, 4, 0, 0}), tlv.Str())
+	assert.Equal(t, tlvLength, l)
+	assert.Equal(t, tlvLength-2, len(tlv.Value()))
+	assert.Equal(t, string([]byte{CMDPlay, tlvLength, 0, 0}), tlv.Str())
 }
 
 func TestTLVLenHandlesNil(t *testing.T) {
