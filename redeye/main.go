@@ -88,6 +88,11 @@ func main() {
 			wg.Wait()
 		}
 	}
+
+	// For a static image, hold the window open until the user presses a key.
+	if config.Image != "" {
+		w.WaitKey(0)
+	}
 }
 
 func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
