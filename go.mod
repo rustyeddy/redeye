@@ -7,9 +7,8 @@ toolchain go1.24.13
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/hybridgroup/mjpeg v0.0.0-20140228234708-4680f319790e
-
-	gocv.io/x/gocv v0.39.0
 	github.com/stretchr/testify v1.10.0
+	gocv.io/x/gocv v0.39.0
 	nhooyr.io/websocket v1.8.17
 )
 
