@@ -1,6 +1,11 @@
 package filters
 
-import "github.com/rustyeddy/redeye"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/rustyeddy/redeye"
+)
 
 type Filter interface {
 	Name() string
@@ -28,6 +33,10 @@ var (
 	Filters FilterMap = make(map[string]Filter)
 )
 
+func init() {
+	http.Handle("/api/filters", Filters)
+}
+
 func (f FilterMap) Add(name string, flt Filter) {
 	f[name] = flt
 }
@@ -42,4 +51,13 @@ func (f FilterMap) List() (names []string) {
 		names = append(names, n)
 	}
 	return names
+}
+
+func (f FilterMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var filters []string
+	for n, _ := range Filters {
+		filters = append(filters, n)
+	}
+
+	fmt.Fprintf(w, "%v", filters)
 }
