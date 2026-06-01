@@ -55,7 +55,6 @@ func streamVideo(camstr string) (frames <-chan gocv.Mat) {
 			// read a single raw image from the cam.
 			// Only a single static image will be in the system at a given time.
 			img := gocv.NewMat()
-
 			if ok := cap.Read(&img); !ok {
 				log.Println("device closed, turn recording off")
 				continue
@@ -82,4 +81,3 @@ func streamVideo(camstr string) (frames <-chan gocv.Mat) {
 	// return the frame channel, our caller will pass it to the reader
 	return frameQ
 }
-

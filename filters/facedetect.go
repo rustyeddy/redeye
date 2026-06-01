@@ -1,7 +1,6 @@
 package filters
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -36,7 +35,6 @@ func (flt *FaceDetector) Init(config string) {
 	flt.color = color.RGBA{0, 0, 255, 0}
 	flt.classifier = gocv.NewCascadeClassifier()
 	flt.XMLFile = redeye.GetConfig().CascadeFile
-	fmt.Printf("XMLFILE: %s\n", flt.XMLFile)
 	if !flt.classifier.Load(flt.XMLFile) {
 		log.Printf("Error reading cascade file: %v", faceDetect.XMLFile)
 		return
