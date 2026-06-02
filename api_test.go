@@ -1,6 +1,7 @@
 package redeye
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,6 +26,22 @@ func TestAPIRoutesReturnNotImplementedForSupportedMethods(t *testing.T) {
 			assert.Contains(t, rr.Body.String(), path)
 		}
 	}
+}
+
+func TestHealthEndpointReturnsOK(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterAPIRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+
+	var body map[string]string
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&body))
+	assert.Equal(t, "ok", body["status"])
 }
 
 func TestAPIRoutesRejectUnsupportedMethods(t *testing.T) {

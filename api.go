@@ -22,11 +22,18 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 		mux = http.DefaultServeMux
 	}
 
+	mux.HandleFunc("/health", healthHandler)
+
 	for path, methods := range apiRouteMethods {
 		path := path
 		methods := append([]string(nil), methods...)
 		mux.Handle(path, notImplementedHandler(path, methods))
 	}
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func notImplementedHandler(path string, methods []string) http.Handler {
