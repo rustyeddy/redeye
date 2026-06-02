@@ -14,6 +14,7 @@ import (
 	_ "github.com/rustyeddy/redeye/filters/colors"
 	_ "github.com/rustyeddy/redeye/filters/facedetect"
 	_ "github.com/rustyeddy/redeye/filters/resize"
+	_ "github.com/rustyeddy/redeye/filters/textzoom"
 )
 
 var (
