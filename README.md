@@ -17,35 +17,56 @@ camera's.
 The idea is to be able to *control* a *network of cameras* providing
 various video stream(s) to _Computer Vision_ algorithms.
 
+## Usage
+
+```
+redeye [flags]
+
+Flags:
+  -device int        USB/V4L camera device index (default 0)
+  -rtsp   string     RTSP stream URL  (e.g. rtsp://192.168.1.10/stream)
+  -video  string     Local video file path
+  -image  string     Single static image file
+  -pipeline string   Colon-separated filter pipeline (e.g. resize:0.5:face-detect)
+  -addr   string     HTTP listen address (default "0.0.0.0:8080")
+  -cascade-file string  Haar cascade XML for face detection
+  -filters           List available filters and exit
+```
+
+Exactly one video source should be specified. When none is given, device 0 is used.
+
+## Video Sources
+
+| Flag | Description |
+|---|---|
+| *(none)* | USB/V4L camera at device index 0 |
+| `-device N` | USB/V4L camera at device index N |
+| `-rtsp rtsp://host/path` | RTSP network stream (IP cameras, NVRs, `rtsps://` for TLS) |
+| `-video file.mp4` | Local video file (MP4, AVI, MKV, …) |
+| `-image file.jpg` | Single static image (window stays open until a key is pressed) |
+
 ## Working Features
 
-RedEye was built to _stream video over IP_ as well take control
-commands from a network client. With that in mind, RedEye was built
-with the following features:
-
-1. Device support is provided by OpenCV, releiving me of programming. 
-2. Stream M-JPEG files over HTTP
-7. Plugin system for configurable *Computer Vision Pipelines CVP*
-3. REST API for the Config, Control and Storage Interfaces
-4. MQTT messaging support for the above APIs
-5. Websocket support for APIs
-6. Embedded Webapp to control camera
+1. Multiple video sources: USB camera, RTSP network stream, local video file, static image
+2. MJPEG streaming over HTTP at `/mjpeg`
+3. Configurable computer vision filter pipeline (resize, face detection)
+4. REST API scaffolding with `GET /health` liveness endpoint
+5. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
 
 ## Near Term Roadmap
 
-0. Off device video pipeline (stream to nano for CV Pipeline)
-4. Improve the CV pipeline
-1. Configurable cloud storage options
-2. OpenCV to become a plugin
-4. Stream only (M-JPEG) only support for cameras
+- Snapshot capture via `POST /api/camera/snap`
+- Platform camera string helpers (Jetson Nano CSI, Raspberry Pi)
+- MQTT messaging for distributed multi-camera control
+- WebSocket endpoint for real-time event push to browser clients
 
 ## Supported Platforms
 
 + Raspberry Pi 3/4 + CSI Camera
 + Jetson Nano + CSI Camera
 + Ubuntu 19 Desktop + USB Cam (V4L)
-+ Macbook Pro and Ait + Built in Camera
-+ TODO Windows
++ Macbook Pro and Air + Built-in Camera
++ Any IP camera exposing an RTSP stream
 
 ### TODO OpenCV Plugin and Stream Only
 

@@ -2,6 +2,7 @@ package redeye
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -172,6 +173,24 @@ func GetVideo(fname string) (vid *VideoFile, err error) {
 		return nil, err
 	}
 
+	return vid, nil
+}
+
+// GetRTSP opens an RTSP network stream and returns it as a VideoFile.
+// The url must begin with rtsp:// or rtsps://.
+func GetRTSP(url string) (*VideoFile, error) {
+	if !strings.HasPrefix(url, "rtsp://") && !strings.HasPrefix(url, "rtsps://") {
+		return nil, fmt.Errorf("GetRTSP: URL must begin with rtsp:// or rtsps://, got %q", url)
+	}
+	vid := &VideoFile{
+		bufferSize: 5,
+		quit:       make(chan struct{}),
+	}
+	var err error
+	vid.VideoCapture, err = gocv.VideoCaptureFile(url)
+	if err != nil {
+		return nil, fmt.Errorf("GetRTSP: failed to open %s: %w", url, err)
+	}
 	return vid, nil
 }
 

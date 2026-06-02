@@ -88,3 +88,34 @@ func TestImgCloseBeforeConsumeDoesNotPanic(t *testing.T) {
 	// Close without consuming the frame — should not panic.
 	img.Close()
 }
+
+// --- GetRTSP ---
+
+func TestGetRTSPRejectsNonRTSPScheme(t *testing.T) {
+	cases := []string{
+		"http://camera.local/stream",
+		"https://camera.local/stream",
+		"/dev/video0",
+		"",
+		"camera.local/stream",
+	}
+	for _, url := range cases {
+		_, err := GetRTSP(url)
+		if err == nil {
+			t.Errorf("GetRTSP(%q): expected error for non-RTSP URL, got nil", url)
+		}
+	}
+}
+
+func TestGetRTSPAcceptsRTSPScheme(t *testing.T) {
+	// Validates the URL-scheme check passes for rtsp:// and rtsps://.
+	// The actual connection attempt will fail (no server), but the error
+	// must not be the scheme-validation error — it must be an open/connect error.
+	for _, url := range []string{"rtsp://localhost/stream", "rtsps://localhost/stream"} {
+		_, err := GetRTSP(url)
+		if err != nil && err.Error() == "GetRTSP: URL must begin with rtsp:// or rtsps://, got "+`"`+url+`"` {
+			t.Errorf("GetRTSP(%q): scheme was rejected but should have passed validation", url)
+		}
+		// err may be non-nil (no server running), that's expected and fine.
+	}
+}

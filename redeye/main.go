@@ -26,7 +26,8 @@ func init() {
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.IntVar(&config.VideoDevice, "device", 0, "Video capture device. default 0")
 	flag.StringVar(&config.Image, "image", "", "Image name")
-	flag.StringVar(&config.Video, "video", "", "Video Name")
+	flag.StringVar(&config.Video, "video", "", "Video file name")
+	flag.StringVar(&config.RTSPUrl, "rtsp", "", "RTSP stream URL (e.g. rtsp://camera.local/stream)")
 }
 
 func main() {
@@ -114,6 +115,8 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 	if config.Image != "" {
 		imgsrc, err = redeye.GetImg(config.Image)
 		config.WaitTime = 0
+	} else if config.RTSPUrl != "" {
+		imgsrc, err = redeye.GetRTSP(config.RTSPUrl)
 	} else if config.Video != "" {
 		imgsrc, err = redeye.GetVideo(config.Video)
 	} else {

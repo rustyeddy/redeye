@@ -16,7 +16,8 @@ type Configuration struct {
 	MQTTBroker  string `json:"broker"`       // MQTT Broker
 	VideoDevice int    `json:"video-device"` // Capture device
 	Image       string `json:"image"`        // Single image
-	Video       string `json:"video"`
+	Video    string `json:"video"`
+	RTSPUrl  string `json:"rtsp-url"`
 	CascadeFile string `json:"cascade-file"`
 	Pipeline    string `json:"pipeline"`
 	WaitTime    int    `json:"wait-time"`
