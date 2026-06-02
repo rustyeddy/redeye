@@ -28,6 +28,8 @@ func init() {
 	flag.StringVar(&config.Image, "image", "", "Image name")
 	flag.StringVar(&config.Video, "video", "", "Video file name")
 	flag.StringVar(&config.RTSPUrl, "rtsp", "", "RTSP stream URL (e.g. rtsp://camera.local/stream)")
+	flag.StringVar(&config.MQTTBroker, "broker", "", "MQTT broker URL (e.g. tcp://localhost:1883); empty disables MQTT")
+	flag.StringVar(&config.MQTTTopicPrefix, "topic-prefix", "/redeye", "MQTT topic namespace prefix")
 }
 
 func main() {
@@ -50,6 +52,13 @@ func main() {
 	// Register the source as the snap target if it supports snapping.
 	if s, ok := imgsrc.(redeye.Snapper); ok {
 		redeye.SetSnapper(s)
+	}
+
+	// Start MQTT messenger if a broker is configured.
+	if config.MQTTBroker != "" {
+		if msgr := startMessenger(config); msgr != nil {
+			defer msgr.Close()
+		}
 	}
 
 	// Set up the pipeline
@@ -157,6 +166,21 @@ func startMJPEG() *redeye.MJPEG {
 	mjpeg := redeye.NewMJPEG()
 	http.Handle("/mjpeg", mjpeg)
 	return mjpeg
+}
+
+func startMessenger(config *redeye.Configuration) *redeye.Messenger {
+	m := redeye.NewMessenger(config.MQTTBroker, config.MQTTTopicPrefix)
+	if err := m.Connect(); err != nil {
+		log.Printf("MQTT disabled: %v", err)
+		return nil
+	}
+	if err := m.Announce(); err != nil {
+		log.Printf("MQTT announce failed: %v", err)
+	}
+	if err := m.SubscribeCommands(); err != nil {
+		log.Printf("MQTT subscribe failed: %v", err)
+	}
+	return m
 }
 
 func listFilters() {

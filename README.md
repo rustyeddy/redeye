@@ -23,14 +23,16 @@ various video stream(s) to _Computer Vision_ algorithms.
 redeye [flags]
 
 Flags:
-  -device string     Camera device: index (0,1,…), name, or path (default "0")
-  -rtsp   string     RTSP stream URL  (e.g. rtsp://192.168.1.10/stream)
-  -video  string     Local video file path
-  -image  string     Single static image file
-  -pipeline string   Colon-separated filter pipeline (e.g. resize:0.5:face-detect)
-  -addr   string     HTTP listen address (default "0.0.0.0:8080")
+  -device string        Camera device: index (0,1,…), name, or path (default "0")
+  -rtsp   string        RTSP stream URL  (e.g. rtsp://192.168.1.10/stream)
+  -video  string        Local video file path
+  -image  string        Single static image file
+  -pipeline string      Colon-separated filter pipeline (e.g. resize:0.5:face-detect)
+  -addr   string        HTTP listen address (default "0.0.0.0:8080")
+  -broker string        MQTT broker URL (e.g. tcp://localhost:1883); empty disables MQTT
+  -topic-prefix string  MQTT topic namespace prefix (default "/redeye")
   -cascade-file string  Haar cascade XML for face detection
-  -filters           List available filters and exit
+  -filters              List available filters and exit
 ```
 
 Exactly one video source should be specified. When none is given, device `"0"` is used.
@@ -67,7 +69,8 @@ Exactly one video source should be specified. When none is given, device `"0"` i
 3. MJPEG streaming over HTTP at `/mjpeg`
 4. Configurable computer vision filter pipeline (resize, face detection)
 5. REST API with `GET /health` liveness endpoint and `POST /api/camera/snap` snapshot capture
-6. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
+6. MQTT pub/sub for distributed multi-camera control
+7. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
 
 ## REST API
 
@@ -87,11 +90,35 @@ POST /api/camera/snap?file=myshot.jpg
 - Returns `{"file":"myshot.jpg"}` on success, or a JSON error body with an appropriate HTTP status code.
 - Works with all source types: USB camera, RTSP stream, video file, and static image.
 
+## MQTT Distributed Control
+
+When `-broker` is set, redeye connects to the broker on startup, announces itself, and listens for JSON commands.
+
+**Topics** (using default prefix `/redeye`):
+
+| Direction | Topic | Purpose |
+|---|---|---|
+| Publish | `/redeye/announce/camera` | Node announces itself on connect |
+| Subscribe | `/redeye/camera/<hostname>` | Receives commands addressed to this node |
+
+**Command format:**
+
+```json
+{ "command": "snap", "file": "optional-output.jpg" }
+```
+
+| Command | Effect |
+|---|---|
+| `snap` | Saves the current frame; `file` is optional (defaults to `snapshot-<timestamp>.jpg`) |
+
+**Example** — trigger a snapshot on a remote camera from any MQTT client:
+
+```
+mosquitto_pub -h broker.local -t /redeye/camera/mycamera -m '{"command":"snap","file":"/data/event.jpg"}'
+```
+
 ## Near Term Roadmap
 
-- Snapshot capture via `POST /api/camera/snap`
-- Platform camera string helpers (Jetson Nano CSI, Raspberry Pi)
-- MQTT messaging for distributed multi-camera control
 - WebSocket endpoint for real-time event push to browser clients
 
 ## Supported Platforms

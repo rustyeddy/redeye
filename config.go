@@ -13,7 +13,8 @@ import (
 type Configuration struct {
 	HTTPAddr    string `json:"addr"`         // http address and port
 	HTMLPath    string `json:"basepath"`     // html basepath
-	MQTTBroker  string `json:"broker"`       // MQTT Broker
+	MQTTBroker       string `json:"broker"`       // MQTT broker URL
+	MQTTTopicPrefix  string `json:"topic-prefix"` // MQTT topic namespace
 	VideoDevice string `json:"video-device"` // Capture device: index, name, or path
 	Image       string `json:"image"`        // Single image
 	Video    string `json:"video"`
