@@ -1,12 +1,8 @@
-package filters
+package redeye
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/rustyeddy/redeye"
-)
-
-// mockFilter is a lightweight Filter implementation used only in tests.
+// mockFilter is a lightweight Filter implementation used only in pipeline tests.
 // It records the config string passed to Init so tests can inspect it.
 type mockFilter struct {
 	Flt
@@ -14,7 +10,7 @@ type mockFilter struct {
 }
 
 func (m *mockFilter) Init(config string) { m.initConfig = config }
-func (m *mockFilter) Filter(f *redeye.Frame) *redeye.Frame { return f }
+func (m *mockFilter) Filter(f *Frame) *Frame { return f }
 
 // registerMock adds a named mockFilter to the global Filters map and returns
 // both the filter and a cleanup function that removes it afterwards.
@@ -97,7 +93,6 @@ func TestNewPipelineMultipleConfigTokens(t *testing.T) {
 	mf, cleanup := registerMock("testG")
 	defer cleanup()
 
-	// Two config tokens for a single filter: joined with ":"
 	p := NewPipeline("testG:0.5:0.8")
 	if len(p.Filters) != 1 {
 		t.Fatalf("expected 1 filter, got %d", len(p.Filters))
@@ -108,7 +103,6 @@ func TestNewPipelineMultipleConfigTokens(t *testing.T) {
 }
 
 func TestNewPipelineUnknownFilterLogged(t *testing.T) {
-	// An unknown name at the start should not panic or add a filter.
 	p := NewPipeline("nonexistent")
 	if len(p.Filters) != 0 {
 		t.Fatalf("expected 0 filters, got %d", len(p.Filters))

@@ -1,4 +1,4 @@
-package filters
+package facedetect
 
 import (
 	"testing"
@@ -40,7 +40,6 @@ func TestFaceDetectorFilterSafeAfterFailedInit(t *testing.T) {
 	frame, cleanup := newTestFrame(t)
 	defer cleanup()
 
-	// Must not panic — this is the crash that was reported.
 	result := flt.Filter(frame)
 	if result != frame {
 		t.Error("Filter should return frame unchanged after a failed Init")
@@ -48,14 +47,12 @@ func TestFaceDetectorFilterSafeAfterFailedInit(t *testing.T) {
 }
 
 func TestFaceDetectorInitSetsLoadedOnSuccess(t *testing.T) {
-	// Only runs when a real cascade file is present; skips otherwise.
 	cascadePath := "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
 	flt := &FaceDetector{}
 	flt.Init(cascadePath)
 
 	if !flt.loaded {
-		t.Skipf("cascade file not available at %s; skipping loaded=true check", cascadePath)
+		t.Skipf("cascade file not available at %s; skipping", cascadePath)
 	}
-	// If we get here the file was found and the classifier loaded.
 	defer flt.classifier.Close()
 }

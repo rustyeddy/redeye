@@ -1,5 +1,8 @@
 BINARY := redeye/redeye
-PKGS   := github.com/rustyeddy/redeye github.com/rustyeddy/redeye/filters
+PKGS   := github.com/rustyeddy/redeye \
+           github.com/rustyeddy/redeye/filters/facedetect \
+           github.com/rustyeddy/redeye/filters/resize \
+           github.com/rustyeddy/redeye/filters/colors
 
 .PHONY: all build test coverage clean rpi nano
 

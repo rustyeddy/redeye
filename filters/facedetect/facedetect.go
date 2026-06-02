@@ -1,4 +1,8 @@
-package filters
+// Package facedetect provides a Haar-cascade face-detection filter.
+// Import it for its side effect of registering "face-detect" in redeye.Filters:
+//
+//	import _ "github.com/rustyeddy/redeye/filters/facedetect"
+package facedetect
 
 import (
 	"image"
@@ -9,30 +13,26 @@ import (
 	"gocv.io/x/gocv"
 )
 
+// FaceDetector draws a bounding box around each detected face using a Haar
+// cascade classifier and emits a "detection" event on redeye.Events.
 type FaceDetector struct {
 	XMLFile string
-	Flt
+	redeye.Flt
 
 	color      color.RGBA
 	classifier gocv.CascadeClassifier
 	loaded     bool
 }
 
-var (
-	faceDetect *FaceDetector = &FaceDetector{
-		Flt: Flt{
-			name:        "face-detect",
-			description: "Detect faces with XML cascades",
-		},
-	}
-)
+var faceDetect = &FaceDetector{
+	Flt: redeye.NewFlt("face-detect", "Detect faces with XML cascades"),
+}
 
 func init() {
-	Filters.Add("face-detect", faceDetect)
+	redeye.Filters.Add("face-detect", faceDetect)
 }
 
 func (flt *FaceDetector) Init(config string) {
-	flt.description = "Detect faces with XML Cascade"
 	flt.color = color.RGBA{0, 0, 255, 0}
 	flt.classifier = gocv.NewCascadeClassifier()
 	flt.loaded = false
@@ -42,7 +42,7 @@ func (flt *FaceDetector) Init(config string) {
 		flt.XMLFile = redeye.GetConfig().CascadeFile
 	}
 	if !flt.classifier.Load(flt.XMLFile) {
-		log.Printf("Error reading cascade file: %v", flt.XMLFile)
+		log.Printf("face-detect: failed to load cascade file: %v", flt.XMLFile)
 		return
 	}
 	flt.loaded = true
@@ -61,11 +61,8 @@ func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
 		return frame
 	}
 
-	// detect faces
 	rects := flt.classifier.DetectMultiScale(*frame.Mat)
 
-	// draw a rectangle around each face on the original image,
-	// along with text identifing as "Human"
 	faces := make([]detFace, 0, len(rects))
 	for _, r := range rects {
 		gocv.Rectangle(frame.Mat, r, flt.color, 3)

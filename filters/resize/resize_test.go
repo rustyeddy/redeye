@@ -1,4 +1,4 @@
-package filters
+package resize
 
 import (
 	"bytes"
@@ -55,7 +55,6 @@ func TestResizeInitInvalidScaleFallsBackToDefault(t *testing.T) {
 	r.mu.RLock()
 	x, y := r.X, r.Y
 	r.mu.RUnlock()
-	// Bad parse: X and Y stay at the defaults set at the top of Init.
 	if x != 1.0 || y != 1.0 {
 		t.Errorf("invalid scale: want X=1.0 Y=1.0, got X=%v Y=%v", x, y)
 	}
@@ -97,7 +96,6 @@ func TestResizeServeHTTPBadJSONReturns400(t *testing.T) {
 	if rr.Code != http.StatusBadRequest {
 		t.Errorf("bad JSON: want 400, got %d", rr.Code)
 	}
-	// Fields must be unchanged.
 	r.mu.RLock()
 	x, y := r.X, r.Y
 	r.mu.RUnlock()
@@ -159,7 +157,6 @@ func TestResizeFilterAndServeHTTPConcurrent(t *testing.T) {
 
 	var wg sync.WaitGroup
 
-	// goroutine 1: read X/Y via Filter
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -168,7 +165,6 @@ func TestResizeFilterAndServeHTTPConcurrent(t *testing.T) {
 		}
 	}()
 
-	// goroutine 2: write X/Y via ServeHTTP
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
