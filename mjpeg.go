@@ -1,41 +1,50 @@
 package redeye
 
 import (
+	"sync"
+
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
 )
 
 type MJPEG struct {
 	*mjpeg.Stream
-	opened bool
+	quit chan struct{}
+	wg   sync.WaitGroup
 }
 
 func NewMJPEG() (m *MJPEG) {
-	m = &MJPEG{}
-	m.Stream = mjpeg.NewStream()
+	m = &MJPEG{
+		Stream: mjpeg.NewStream(),
+		quit:   make(chan struct{}),
+	}
 	return m
 }
 
 func (m *MJPEG) Play() chan *Frame {
-	// need to close frameQ
 	frameQ := make(chan *Frame)
-	m.opened = true
-
+	m.wg.Add(1)
 	go func() {
+		defer m.wg.Done()
 		for {
-			frame := <-frameQ
-			img := frame.Mat
-
-			// Can we reuse the buffer?
-			buf, _ := gocv.IMEncode(".jpg", *img)
-			m.Stream.UpdateJPEG(buf.GetBytes())
-			buf.Close()
+			select {
+			case <-m.quit:
+				return
+			case frame, ok := <-frameQ:
+				if !ok {
+					return
+				}
+				buf, _ := gocv.IMEncode(".jpg", *frame.Mat)
+				m.Stream.UpdateJPEG(buf.GetBytes())
+				buf.Close()
+			}
 		}
 	}()
 	return frameQ
 }
 
 func (m *MJPEG) Close() error {
-	m.opened = false
+	close(m.quit)
+	m.wg.Wait()
 	return nil
 }

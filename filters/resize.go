@@ -2,23 +2,24 @@ package filters
 
 import (
 	"encoding/json"
-	"fmt"
 	"image"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/rustyeddy/redeye"
 	"gocv.io/x/gocv"
 )
 
 type Resize struct {
+	mu     sync.RWMutex
 	X      float64 `json:"x"`
 	Y      float64 `json:"y"`
 	Interp int     `json:"interp"`
 
-	Flt `json:-`
+	Flt `json:"-"`
 }
 
 var (
@@ -36,6 +37,8 @@ func init() {
 }
 
 func (r *Resize) Init(config string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.X = 1.0
 	r.Y = 1.0
 	if config == "" {
@@ -59,15 +62,34 @@ func (r *Resize) Init(config string) {
 }
 
 func (r *Resize) Filter(frame *redeye.Frame) *redeye.Frame {
-	gocv.Resize(*frame.Mat, frame.Mat, image.Point{}, r.X, r.Y, gocv.InterpolationArea)
+	r.mu.RLock()
+	x, y := r.X, r.Y
+	r.mu.RUnlock()
+	gocv.Resize(*frame.Mat, frame.Mat, image.Point{}, x, y, gocv.InterpolationArea)
 	return frame
 }
 
 func (res *Resize) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&res)
-	if err != nil {
-		fmt.Fprint(w, err)
+	var params struct {
+		X      float64 `json:"x"`
+		Y      float64 `json:"y"`
+		Interp int     `json:"interp"`
 	}
-	fmt.Fprintf(w, "%+v", res)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	res.mu.Lock()
+	res.X = params.X
+	res.Y = params.Y
+	res.Interp = params.Interp
+	x, y, interp := res.X, res.Y, res.Interp
+	res.mu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(struct {
+		X      float64 `json:"x"`
+		Y      float64 `json:"y"`
+		Interp int     `json:"interp"`
+	}{x, y, interp})
 }

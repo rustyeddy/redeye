@@ -96,9 +96,14 @@ func main() {
 		}
 	}
 
-	// For a static image, hold the window open until the user presses a key.
+	// For a static image, hold the window open until the user presses a key
+	// or the process is interrupted. Only the Window goroutine calls WaitKey;
+	// main waits on the resulting signal channel to avoid concurrent highgui calls.
 	if config.Image != "" {
-		w.WaitKey(0)
+		select {
+		case <-done:
+		case <-w.KeyPressed():
+		}
 	}
 }
 

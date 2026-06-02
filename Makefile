@@ -1,18 +1,27 @@
-all: plugins redeye
+BINARY := redeye/redeye
+PKGS   := github.com/rustyeddy/redeye github.com/rustyeddy/redeye/filters
 
-redeye: *.go
-	go build -v
+.PHONY: all build test coverage clean rpi nano
+
+all: build
+
+build:
+	go build -o $(BINARY) ./redeye
 
 test:
-	./bin/get-health.sh
+	go test -race $(PKGS)
+
+coverage:
+	go test -coverprofile=coverage.out $(PKGS)
+	go tool cover -func=coverage.out
+	@rm -f coverage.out
 
 rpi:
-	GOOS=linux GOARCH=arm GOARM=7 go build -v
+	GOOS=linux GOARCH=arm GOARM=7 go build -o $(BINARY) ./redeye
 
 nano:
-	export GOOS=linux GOARCH=arm GOARM=7 go build -v
+	GOOS=linux GOARCH=arm GOARM=7 go build -o $(BINARY) ./redeye
 
-plugins:
-	make -C plugins
-
-.PHONY: all build rpi nano plugins
+clean:
+	rm -f $(BINARY) coverage.out
+	go clean

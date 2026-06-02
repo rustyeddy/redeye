@@ -116,8 +116,8 @@ func TestNewPipelineUnknownFilterLogged(t *testing.T) {
 }
 
 func TestNewPipelineFilterOrder(t *testing.T) {
-	mfA, cleanupA := registerMock("testH")
-	mfB, cleanupB := registerMock("testI")
+	_, cleanupA := registerMock("testH")
+	_, cleanupB := registerMock("testI")
 	defer cleanupA()
 	defer cleanupB()
 

@@ -2,6 +2,7 @@ package redeye
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"gocv.io/x/gocv"
@@ -21,11 +22,12 @@ type ImgSrc interface {
 type Cam struct {
 	BufferSize int
 
-	devID   int
-	cap     *gocv.VideoCapture
-	frames  *FrameBuffers
-	frameQ  chan *Frame
-	running bool
+	devID  int
+	cap    *gocv.VideoCapture
+	frames *FrameBuffers
+	frameQ chan *Frame
+	quit   chan struct{}
+	wg     sync.WaitGroup
 }
 
 // GetCam will open the Camera device of the given deviceID and create
@@ -34,6 +36,7 @@ func GetCam(deviceID int) (cam *Cam, err error) {
 	cam = &Cam{
 		devID:      deviceID,
 		BufferSize: 10,
+		quit:       make(chan struct{}),
 	}
 	cam.cap, err = gocv.VideoCaptureDevice(deviceID)
 	if err != nil {
@@ -45,19 +48,30 @@ func GetCam(deviceID int) (cam *Cam, err error) {
 
 // IsRunning will tell us if the camera is active delivering images
 func (cam *Cam) IsRunning() bool {
-	return cam.running
+	select {
+	case <-cam.quit:
+		return false
+	default:
+		return true
+	}
 }
 
 // Play will start reading images from the OpenCV frame device and
 // start queing them up on the frame channel after doing a quick
 // sanity check to ensure there are infact an images to be read.
 func (cam *Cam) Play() chan *Frame {
-	cam.running = true
 	cam.frameQ = make(chan *Frame)
-
 	cam.frames = GetFrameBuffers(cam.BufferSize)
+	cam.wg.Add(1)
 	go func() {
-		for cam.running {
+		defer cam.wg.Done()
+		defer close(cam.frameQ)
+		for {
+			select {
+			case <-cam.quit:
+				return
+			default:
+			}
 			time.Sleep(5 * time.Millisecond)
 
 			frame := cam.frames.Next()
@@ -69,18 +83,22 @@ func (cam *Cam) Play() chan *Frame {
 			if size[0] <= 0 || size[1] <= 0 {
 				continue
 			}
-			cam.frameQ <- &frame
+			select {
+			case cam.frameQ <- &frame:
+			case <-cam.quit:
+				return
+			}
 		}
-		close(cam.frameQ)
 	}()
 
 	return cam.frameQ
 }
 
-// Close stops reading images from the capture device and closes down
-// the FrameQ channel
+// Close stops reading images from the capture device, waits for the
+// goroutine to exit, then releases resources.
 func (cam *Cam) Close() error {
-	cam.running = false
+	close(cam.quit)
+	cam.wg.Wait() // wait for goroutine before freeing Mats
 	cam.cap.Close()
 	cam.frames.Close()
 	return nil
@@ -94,14 +112,11 @@ type Img struct {
 
 	frame  *Frame
 	frameQ chan *Frame
-
-	running bool
 }
 
 // GetImg opens the image file fname and returns the image
 // processing and/or viewing.
 func GetImg(fname string) (img *Img, err error) {
-	//m := gocv.IMRead(fname, gocv.IMReadUnchanged)
 	m := gocv.IMRead(fname, gocv.IMReadColor)
 	if m.Empty() {
 		return nil, fmt.Errorf("ERROR reading %s", fname)
@@ -112,31 +127,23 @@ func GetImg(fname string) (img *Img, err error) {
 	return img, nil
 }
 
-// IsRunning tells us if the image is being displayed, it
-// also fulfills the ImgSrc interface
+// IsRunning reports true until the single buffered frame has been consumed.
 func (i *Img) IsRunning() bool {
-	return i.running
+	return len(i.frameQ) > 0
 }
 
-// Play will copy the opened frame into the pipeline
+// Play pre-loads the frame into a buffered channel and closes it immediately,
+// so no goroutine is needed and Close() has nothing to race against.
 func (i *Img) Play() chan *Frame {
-	i.frameQ = make(chan *Frame)
-	i.running = true
-
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		i.frameQ <- i.frame
-		i.running = false
-	}()
+	i.frameQ = make(chan *Frame, 1)
+	i.frameQ <- i.frame
+	close(i.frameQ)
 	return i.frameQ
 }
 
-// Close the image
+// Close releases the image Mat.
 func (i *Img) Close() error {
-	i.running = false
 	i.frame.Mat.Close()
-	close(i.frameQ)
-
 	return nil
 }
 
@@ -148,31 +155,48 @@ type VideoFile struct {
 	fname      string
 	frames     *FrameBuffers
 	frameQ     chan *Frame
-	running    bool
+	quit       chan struct{}
+	wg         sync.WaitGroup
 	bufferSize int
 }
 
 // GetVideo reads the file specified by the fname and prepares
 // to run it through
 func GetVideo(fname string) (vid *VideoFile, err error) {
-	vid = &VideoFile{}
+	vid = &VideoFile{
+		bufferSize: 5,
+		quit:       make(chan struct{}),
+	}
 	vid.VideoCapture, err = gocv.VideoCaptureFile(fname)
-	vid.bufferSize = 5
+	if err != nil {
+		return nil, err
+	}
 
-	return vid, err
+	return vid, nil
 }
 
 func (v *VideoFile) IsRunning() bool {
-	return v.running
+	select {
+	case <-v.quit:
+		return false
+	default:
+		return true
+	}
 }
 
 func (v *VideoFile) Play() chan *Frame {
 	v.frameQ = make(chan *Frame)
-	v.running = true
-
 	v.frames = GetFrameBuffers(v.bufferSize)
+	v.wg.Add(1)
 	go func() {
-		for v.running {
+		defer v.wg.Done()
+		defer close(v.frameQ)
+		for {
+			select {
+			case <-v.quit:
+				return
+			default:
+			}
 			time.Sleep(10 * time.Millisecond)
 
 			frame := v.frames.Next()
@@ -184,16 +208,20 @@ func (v *VideoFile) Play() chan *Frame {
 			if size[0] <= 0 || size[1] <= 0 {
 				continue
 			}
-			v.frameQ <- &frame
+			select {
+			case v.frameQ <- &frame:
+			case <-v.quit:
+				return
+			}
 		}
-		close(v.frameQ)
 	}()
 
 	return v.frameQ
 }
 
 func (v *VideoFile) Close() error {
-	v.running = false
+	close(v.quit)
+	v.wg.Wait() // wait for goroutine before freeing Mats
 	v.frames.Close()
 	return v.VideoCapture.Close()
 }

@@ -15,6 +15,7 @@ type FaceDetector struct {
 
 	color      color.RGBA
 	classifier gocv.CascadeClassifier
+	loaded     bool
 }
 
 var (
@@ -34,6 +35,7 @@ func (flt *FaceDetector) Init(config string) {
 	flt.description = "Detect faces with XML Cascade"
 	flt.color = color.RGBA{0, 0, 255, 0}
 	flt.classifier = gocv.NewCascadeClassifier()
+	flt.loaded = false
 	if config != "" {
 		flt.XMLFile = config
 	} else {
@@ -43,10 +45,13 @@ func (flt *FaceDetector) Init(config string) {
 		log.Printf("Error reading cascade file: %v", flt.XMLFile)
 		return
 	}
-
+	flt.loaded = true
 }
 
 func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
+	if !flt.loaded {
+		return frame
+	}
 
 	// detect faces
 	rects := flt.classifier.DetectMultiScale(*frame.Mat)
