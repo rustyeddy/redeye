@@ -48,6 +48,14 @@ func (flt *FaceDetector) Init(config string) {
 	flt.loaded = true
 }
 
+// detFace is the per-face payload inside a "detection" event.
+type detFace struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+	W int `json:"w"`
+	H int `json:"h"`
+}
+
 func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
 	if !flt.loaded {
 		return frame
@@ -58,12 +66,21 @@ func (flt *FaceDetector) Filter(frame *redeye.Frame) *redeye.Frame {
 
 	// draw a rectangle around each face on the original image,
 	// along with text identifing as "Human"
+	faces := make([]detFace, 0, len(rects))
 	for _, r := range rects {
 		gocv.Rectangle(frame.Mat, r, flt.color, 3)
 
 		size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
 		pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
 		gocv.PutText(frame.Mat, "Human", pt, gocv.FontHersheyPlain, 1.2, flt.color, 2)
+
+		faces = append(faces, detFace{X: r.Min.X, Y: r.Min.Y, W: r.Dx(), H: r.Dy()})
 	}
+
+	redeye.Events.Publish(redeye.NewEvent("detection", struct {
+		Count int       `json:"count"`
+		Faces []detFace `json:"faces"`
+	}{Count: len(faces), Faces: faces}))
+
 	return frame
 }

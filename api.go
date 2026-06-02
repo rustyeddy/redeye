@@ -37,7 +37,9 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 		mux = http.DefaultServeMux
 	}
 
+	mux.HandleFunc("/", serveIndex)
 	mux.HandleFunc("/health", healthHandler)
+	mux.Handle("/ws", http.HandlerFunc(wsHandler))
 	mux.Handle("/api/camera/snap", postOnly(http.HandlerFunc(snapHandler)))
 
 	for path, methods := range apiRouteMethods {

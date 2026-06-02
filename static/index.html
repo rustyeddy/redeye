@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Redeye</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body   { font-family: monospace; margin: 1rem; background: #111; color: #ddd; }
+    h1     { color: #e04040; margin: 0 0 .75rem; }
+    #status { display: inline-block; padding: .15rem .5rem; border-radius: 3px;
+              font-size: .75rem; vertical-align: middle; }
+    .on    { background: #1a4a1a; color: #4c4; }
+    .off   { background: #4a1a1a; color: #c44; }
+    .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-top:.75rem; }
+    img    { width: 100%; border: 1px solid #333; display: block; }
+    h3     { margin: 0 0 .4rem; font-size: .9rem; color: #aaa; }
+    #log   { list-style: none; padding: 0; margin: 0; max-height: 70vh;
+              overflow-y: auto; }
+    #log li { padding: .2rem .4rem; border-bottom: 1px solid #222;
+               font-size: .78rem; white-space: pre-wrap; word-break: break-all; }
+    #log li.new { color: #88aaff; }
+  </style>
+</head>
+<body>
+  <h1>Redeye &nbsp;<span id="status" class="off">disconnected</span></h1>
+  <div class="layout">
+    <div>
+      <img id="stream" src="/mjpeg" alt="live stream">
+    </div>
+    <div>
+      <h3>Live events</h3>
+      <ul id="log"></ul>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const logEl    = document.getElementById('log');
+    const MAX_ROWS = 50;
+
+    function addRow(text) {
+      const li = document.createElement('li');
+      li.className = 'new';
+      li.textContent = new Date().toLocaleTimeString() + '  ' + text;
+      logEl.prepend(li);
+      // Fade new highlight after a tick.
+      requestAnimationFrame(() => requestAnimationFrame(() => li.className = ''));
+      while (logEl.children.length > MAX_ROWS) logEl.lastChild.remove();
+    }
+
+    function connect() {
+      const ws = new WebSocket('ws://' + location.host + '/ws');
+
+      ws.onopen = () => {
+        statusEl.textContent = 'connected';
+        statusEl.className = 'on';
+      };
+
+      ws.onmessage = (ev) => {
+        try {
+          const e = JSON.parse(ev.data);
+          const pay = e.payload !== undefined ? JSON.stringify(e.payload) : '';
+          addRow('[' + e.type + '] ' + pay);
+        } catch {
+          addRow(ev.data);
+        }
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = 'disconnected';
+        statusEl.className = 'off';
+        setTimeout(connect, 2000);   // auto-reconnect
+      };
+
+      ws.onerror = () => ws.close();
+    }
+
+    connect();
+  </script>
+</body>
+</html>

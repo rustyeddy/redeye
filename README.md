@@ -70,15 +70,34 @@ Exactly one video source should be specified. When none is given, device `"0"` i
 4. Configurable computer vision filter pipeline (resize, face detection)
 5. REST API with `GET /health` liveness endpoint and `POST /api/camera/snap` snapshot capture
 6. MQTT pub/sub for distributed multi-camera control
-7. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
+7. WebSocket endpoint (`/ws`) for real-time event push; embedded web UI at `/`
+8. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
 
-## REST API
+## REST API & WebSocket
 
 | Method | Path | Description |
 |---|---|---|
+| `GET` | `/` | Embedded web UI (MJPEG stream + live event feed) |
 | `GET` | `/health` | Liveness check — returns `{"status":"ok"}` |
 | `GET` | `/mjpeg` | Live MJPEG video stream |
+| `GET` | `/ws` | WebSocket — server pushes JSON events to the browser |
 | `POST` | `/api/camera/snap` | Save current frame to disk |
+
+### WebSocket events
+
+Connect to `ws://<host>/ws` to receive a stream of JSON events:
+
+```json
+{"type": "connected"}
+{"type": "detection", "payload": {"count": 2, "faces": [{"x":100,"y":80,"w":60,"h":60}]}}
+```
+
+| Type | When emitted | Payload |
+|---|---|---|
+| `connected` | On every new connection | *(none)* |
+| `detection` | After each frame processed by `face-detect` filter | `{count, faces:[{x,y,w,h}]}` |
+
+The web UI at `/` connects automatically and displays the MJPEG stream alongside a live event log.
 
 ### Snapshot
 
@@ -119,7 +138,8 @@ mosquitto_pub -h broker.local -t /redeye/camera/mycamera -m '{"command":"snap","
 
 ## Near Term Roadmap
 
-- WebSocket endpoint for real-time event push to browser clients
+- Additional event types (motion, resize stats, frame rate)
+- WebSocket inbound command support (trigger snap, change pipeline from browser)
 
 ## Supported Platforms
 
