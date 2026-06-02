@@ -43,12 +43,12 @@ func TestConfigurationSaveError(t *testing.T) {
 
 func TestConfigurationLoad(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
-	require.NoError(t, os.WriteFile(path, []byte(`{"addr":"127.0.0.1:9000","video-device":5}`), 0o644))
+	require.NoError(t, os.WriteFile(path, []byte(`{"addr":"127.0.0.1:9000","video-device":"5"}`), 0o644))
 
 	cfg := &Configuration{}
 	require.NoError(t, cfg.Load(path))
 	assert.Equal(t, "127.0.0.1:9000", cfg.HTTPAddr)
-	assert.Equal(t, 5, cfg.VideoDevice)
+	assert.Equal(t, "5", cfg.VideoDevice)
 }
 
 func TestConfigurationLoadError(t *testing.T) {

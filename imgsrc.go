@@ -2,6 +2,7 @@ package redeye
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type ImgSrc interface {
 type Cam struct {
 	BufferSize int
 
-	devID  int
+	device string
 	cap    *gocv.VideoCapture
 	frames *FrameBuffers
 	frameQ chan *Frame
@@ -31,15 +32,24 @@ type Cam struct {
 	wg     sync.WaitGroup
 }
 
-// GetCam will open the Camera device of the given deviceID and create
-// the FrameQ channel to start sending Frames on
-func GetCam(deviceID int) (cam *Cam, err error) {
+// GetCam opens a camera by device descriptor and returns a Cam ready to Play.
+// The descriptor is resolved through CamStr first, so platform names
+// ("jetson", "nano", "rpi", "linux", "mac") and raw device paths
+// ("/dev/video2") are all accepted in addition to plain integer indexes.
+func GetCam(device string) (cam *Cam, err error) {
 	cam = &Cam{
-		devID:      deviceID,
+		device:     device,
 		BufferSize: 10,
 		quit:       make(chan struct{}),
 	}
-	cam.cap, err = gocv.VideoCaptureDevice(deviceID)
+
+	camstr := CamStr(device)
+	if devID, convErr := strconv.Atoi(camstr); convErr == nil {
+		cam.cap, err = gocv.VideoCaptureDevice(devID)
+	} else {
+		// GStreamer pipeline or device path (e.g. /dev/video0)
+		cam.cap, err = gocv.VideoCaptureFile(camstr)
+	}
 	if err != nil {
 		return nil, err
 	}

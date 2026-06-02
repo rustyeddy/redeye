@@ -23,7 +23,7 @@ various video stream(s) to _Computer Vision_ algorithms.
 redeye [flags]
 
 Flags:
-  -device int        USB/V4L camera device index (default 0)
+  -device string     Camera device: index (0,1,…), name, or path (default "0")
   -rtsp   string     RTSP stream URL  (e.g. rtsp://192.168.1.10/stream)
   -video  string     Local video file path
   -image  string     Single static image file
@@ -33,25 +33,41 @@ Flags:
   -filters           List available filters and exit
 ```
 
-Exactly one video source should be specified. When none is given, device 0 is used.
+Exactly one video source should be specified. When none is given, device `"0"` is used.
 
 ## Video Sources
 
 | Flag | Description |
 |---|---|
 | *(none)* | USB/V4L camera at device index 0 |
-| `-device N` | USB/V4L camera at device index N |
-| `-rtsp rtsp://host/path` | RTSP network stream (IP cameras, NVRs, `rtsps://` for TLS) |
+| `-device 0` | USB/V4L camera at device index N |
+| `-device jetson` or `-device nano` | Jetson Nano CSI camera via GStreamer (`nvarguscamerasrc`) |
+| `-device rpi` or `-device linux` | Raspberry Pi / Linux V4L2 camera (`/dev/video0`) |
+| `-device mac` | macOS built-in FaceTime camera |
+| `-device /dev/video2` | Explicit device path (passed through unchanged) |
+| `-rtsp rtsp://host/path` | RTSP network stream (IP cameras, NVRs; `rtsps://` for TLS) |
 | `-video file.mp4` | Local video file (MP4, AVI, MKV, …) |
 | `-image file.jpg` | Single static image (window stays open until a key is pressed) |
+
+### Platform Device Names
+
+`-device` accepts a short name that is resolved to the correct device string or GStreamer pipeline automatically:
+
+| Name | Resolves to |
+|---|---|
+| `jetson`, `nano` | `nvarguscamerasrc` GStreamer pipeline (1280×720 @ 60 fps) |
+| `rpi`, `linux` | `/dev/video0` |
+| `mac`, `default`, `0`, *(empty)* | `0` (OpenCV default device) |
+| anything else | passed through unchanged |
 
 ## Working Features
 
 1. Multiple video sources: USB camera, RTSP network stream, local video file, static image
-2. MJPEG streaming over HTTP at `/mjpeg`
-3. Configurable computer vision filter pipeline (resize, face detection)
-4. REST API scaffolding with `GET /health` liveness endpoint
-5. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
+2. Platform camera name aliases: `jetson`/`nano` (GStreamer), `rpi`/`linux` (`/dev/video0`), `mac`
+3. MJPEG streaming over HTTP at `/mjpeg`
+4. Configurable computer vision filter pipeline (resize, face detection)
+5. REST API scaffolding with `GET /health` liveness endpoint
+6. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
 
 ## Near Term Roadmap
 

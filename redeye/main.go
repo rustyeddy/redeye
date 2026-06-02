@@ -24,7 +24,7 @@ func init() {
 	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:8080", "Default http addr 8080")
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
-	flag.IntVar(&config.VideoDevice, "device", 0, "Video capture device. default 0")
+	flag.StringVar(&config.VideoDevice, "device", "0", "Camera device: index (0,1,…), name (jetson,nano,rpi,linux,mac), or path (/dev/video0)")
 	flag.StringVar(&config.Image, "image", "", "Image name")
 	flag.StringVar(&config.Video, "video", "", "Video file name")
 	flag.StringVar(&config.RTSPUrl, "rtsp", "", "RTSP stream URL (e.g. rtsp://camera.local/stream)")
@@ -123,7 +123,7 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 		imgsrc, err = redeye.GetCam(config.VideoDevice)
 	}
 	if err != nil {
-		log.Printf("Failed to open video device: %d - %+v", config.VideoDevice, err)
+		log.Printf("Failed to open video device %q: %+v", config.VideoDevice, err)
 		os.Exit(1)
 	}
 	return imgsrc
