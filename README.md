@@ -66,8 +66,26 @@ Exactly one video source should be specified. When none is given, device `"0"` i
 2. Platform camera name aliases: `jetson`/`nano` (GStreamer), `rpi`/`linux` (`/dev/video0`), `mac`
 3. MJPEG streaming over HTTP at `/mjpeg`
 4. Configurable computer vision filter pipeline (resize, face detection)
-5. REST API scaffolding with `GET /health` liveness endpoint
+5. REST API with `GET /health` liveness endpoint and `POST /api/camera/snap` snapshot capture
 6. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
+
+## REST API
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Liveness check — returns `{"status":"ok"}` |
+| `GET` | `/mjpeg` | Live MJPEG video stream |
+| `POST` | `/api/camera/snap` | Save current frame to disk |
+
+### Snapshot
+
+```
+POST /api/camera/snap?file=myshot.jpg
+```
+
+- `file` query param sets the output path (default: `snapshot-YYYYMMDD-HHMMSS.jpg` in the working directory).
+- Returns `{"file":"myshot.jpg"}` on success, or a JSON error body with an appropriate HTTP status code.
+- Works with all source types: USB camera, RTSP stream, video file, and static image.
 
 ## Near Term Roadmap
 

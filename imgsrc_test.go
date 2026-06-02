@@ -1,9 +1,13 @@
 package redeye
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gocv.io/x/gocv"
 )
 
@@ -87,6 +91,30 @@ func TestImgCloseBeforeConsumeDoesNotPanic(t *testing.T) {
 
 	// Close without consuming the frame — should not panic.
 	img.Close()
+}
+
+// --- Img.Snap ---
+
+func TestImgSnapWritesFile(t *testing.T) {
+	m := gocv.NewMatWithSize(10, 10, gocv.MatTypeCV8UC3)
+	img := &Img{frame: &Frame{Mat: &m}}
+	defer img.Close()
+
+	out := filepath.Join(t.TempDir(), "snap.jpg")
+	require.NoError(t, img.Snap(out))
+
+	info, err := os.Stat(out)
+	require.NoError(t, err, "snap file should exist")
+	assert.Greater(t, info.Size(), int64(0), "snap file should not be empty")
+}
+
+func TestImgSnapBadPath(t *testing.T) {
+	m := gocv.NewMatWithSize(10, 10, gocv.MatTypeCV8UC3)
+	img := &Img{frame: &Frame{Mat: &m}}
+	defer img.Close()
+
+	err := img.Snap("/nonexistent/dir/snap.jpg")
+	assert.Error(t, err)
 }
 
 // --- GetRTSP ---

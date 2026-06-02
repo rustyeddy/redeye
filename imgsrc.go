@@ -18,6 +18,13 @@ type ImgSrc interface {
 	Close() error
 }
 
+// snapReq is sent on the snap channel to request that the next valid
+// frame be written to disk. The goroutine sends the result on reply.
+type snapReq struct {
+	file  string
+	reply chan error
+}
+
 // Cam is a concrete datatype for a camera, the Cam struct will obtain
 // a FrameBuffer of size 10 by default and open a channel to deliver
 // incoming frames
@@ -29,6 +36,7 @@ type Cam struct {
 	frames *FrameBuffers
 	frameQ chan *Frame
 	quit   chan struct{}
+	snapCh chan snapReq
 	wg     sync.WaitGroup
 }
 
@@ -41,6 +49,7 @@ func GetCam(device string) (cam *Cam, err error) {
 		device:     device,
 		BufferSize: 10,
 		quit:       make(chan struct{}),
+		snapCh:     make(chan snapReq, 1),
 	}
 
 	camstr := CamStr(device)
@@ -94,6 +103,16 @@ func (cam *Cam) Play() chan *Frame {
 			if size[0] <= 0 || size[1] <= 0 {
 				continue
 			}
+			// Drain a pending snap request before forwarding the frame.
+			select {
+			case req := <-cam.snapCh:
+				if gocv.IMWrite(req.file, *frame.Mat) {
+					req.reply <- nil
+				} else {
+					req.reply <- fmt.Errorf("IMWrite failed for %s", req.file)
+				}
+			default:
+			}
 			select {
 			case cam.frameQ <- &frame:
 			case <-cam.quit:
@@ -103,6 +122,25 @@ func (cam *Cam) Play() chan *Frame {
 	}()
 
 	return cam.frameQ
+}
+
+// Snap saves the next valid camera frame to file and returns any error.
+// It blocks until a frame is available (up to 5 s) or the camera stops.
+func (cam *Cam) Snap(file string) error {
+	req := snapReq{file: file, reply: make(chan error, 1)}
+	select {
+	case cam.snapCh <- req:
+	default:
+		return fmt.Errorf("snap already in progress")
+	}
+	select {
+	case err := <-req.reply:
+		return err
+	case <-cam.quit:
+		return fmt.Errorf("camera stopped before snap completed")
+	case <-time.After(5 * time.Second):
+		return fmt.Errorf("snap timed out waiting for next frame")
+	}
 }
 
 // Close stops reading images from the capture device, waits for the
@@ -158,6 +196,14 @@ func (i *Img) Close() error {
 	return nil
 }
 
+// Snap writes the loaded image to file.
+func (i *Img) Snap(file string) error {
+	if !gocv.IMWrite(file, *i.frame.Mat) {
+		return fmt.Errorf("IMWrite failed for %s", file)
+	}
+	return nil
+}
+
 // VideoFile does as it's name indicates, reads a video from
 // a file and runs it through the pipeline
 type VideoFile struct {
@@ -167,6 +213,7 @@ type VideoFile struct {
 	frames     *FrameBuffers
 	frameQ     chan *Frame
 	quit       chan struct{}
+	snapCh     chan snapReq
 	wg         sync.WaitGroup
 	bufferSize int
 }
@@ -177,6 +224,7 @@ func GetVideo(fname string) (vid *VideoFile, err error) {
 	vid = &VideoFile{
 		bufferSize: 5,
 		quit:       make(chan struct{}),
+		snapCh:     make(chan snapReq, 1),
 	}
 	vid.VideoCapture, err = gocv.VideoCaptureFile(fname)
 	if err != nil {
@@ -195,6 +243,7 @@ func GetRTSP(url string) (*VideoFile, error) {
 	vid := &VideoFile{
 		bufferSize: 5,
 		quit:       make(chan struct{}),
+		snapCh:     make(chan snapReq, 1),
 	}
 	var err error
 	vid.VideoCapture, err = gocv.VideoCaptureFile(url)
@@ -238,6 +287,15 @@ func (v *VideoFile) Play() chan *Frame {
 				continue
 			}
 			select {
+			case req := <-v.snapCh:
+				if gocv.IMWrite(req.file, *frame.Mat) {
+					req.reply <- nil
+				} else {
+					req.reply <- fmt.Errorf("IMWrite failed for %s", req.file)
+				}
+			default:
+			}
+			select {
 			case v.frameQ <- &frame:
 			case <-v.quit:
 				return
@@ -246,6 +304,25 @@ func (v *VideoFile) Play() chan *Frame {
 	}()
 
 	return v.frameQ
+}
+
+// Snap saves the next valid video frame to file and returns any error.
+// It blocks until a frame is available (up to 5 s) or the source stops.
+func (v *VideoFile) Snap(file string) error {
+	req := snapReq{file: file, reply: make(chan error, 1)}
+	select {
+	case v.snapCh <- req:
+	default:
+		return fmt.Errorf("snap already in progress")
+	}
+	select {
+	case err := <-req.reply:
+		return err
+	case <-v.quit:
+		return fmt.Errorf("video source stopped before snap completed")
+	case <-time.After(5 * time.Second):
+		return fmt.Errorf("snap timed out waiting for next frame")
+	}
 }
 
 func (v *VideoFile) Close() error {

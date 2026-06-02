@@ -47,6 +47,11 @@ func main() {
 	imgsrc := startImgSrc(config)
 	defer imgsrc.Close()
 
+	// Register the source as the snap target if it supports snapping.
+	if s, ok := imgsrc.(redeye.Snapper); ok {
+		redeye.SetSnapper(s)
+	}
+
 	// Set up the pipeline
 	pipeline := filters.NewPipeline(config.Pipeline)
 	defer pipeline.Close()
