@@ -34,9 +34,13 @@ func (flt *FaceDetector) Init(config string) {
 	flt.description = "Detect faces with XML Cascade"
 	flt.color = color.RGBA{0, 0, 255, 0}
 	flt.classifier = gocv.NewCascadeClassifier()
-	flt.XMLFile = redeye.GetConfig().CascadeFile
+	if config != "" {
+		flt.XMLFile = config
+	} else {
+		flt.XMLFile = redeye.GetConfig().CascadeFile
+	}
 	if !flt.classifier.Load(flt.XMLFile) {
-		log.Printf("Error reading cascade file: %v", faceDetect.XMLFile)
+		log.Printf("Error reading cascade file: %v", flt.XMLFile)
 		return
 	}
 
