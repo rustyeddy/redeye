@@ -1,7 +1,7 @@
 package redeye
 
 import (
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -16,10 +16,12 @@ type Pipeline struct {
 //
 //	"resize:0.5:face-detect"     → resize.Init("0.5"),    face-detect.Init("")
 //	"resize:0.5:0.8:face-detect" → resize.Init("0.5:0.8"), face-detect.Init("")
-func NewPipeline(pipestr string) *Pipeline {
+//
+// Returns an error if any token in a filter-name position is not registered.
+func NewPipeline(pipestr string) (*Pipeline, error) {
 	p := &Pipeline{}
 	if pipestr == "" {
-		return p
+		return p, nil
 	}
 
 	var current Filter
@@ -42,12 +44,12 @@ func NewPipeline(pipestr string) *Pipeline {
 		} else if current != nil {
 			tokens = append(tokens, tok)
 		} else {
-			log.Println("ERROR - unknown filter:", tok)
+			return nil, fmt.Errorf("pipeline: unknown filter %q", tok)
 		}
 	}
 	flush()
 
-	return p
+	return p, nil
 }
 
 func (p *Pipeline) Close() error { return nil }

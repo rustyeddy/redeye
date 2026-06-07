@@ -65,7 +65,10 @@ func main() {
 	}
 
 	// Set up the pipeline
-	pipeline := redeye.NewPipeline(config.Pipeline)
+	pipeline, err := redeye.NewPipeline(config.Pipeline)
+	if err != nil {
+		log.Fatalf("invalid pipeline: %v", err)
+	}
 	defer pipeline.Close()
 
 	// Start the outputs windows and MJPEG server

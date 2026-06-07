@@ -1,6 +1,11 @@
 package redeye
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 // mockFilter is a lightweight Filter implementation used only in pipeline tests.
 // It records the config string passed to Init so tests can inspect it.
@@ -21,7 +26,8 @@ func registerMock(name string) (*mockFilter, func()) {
 }
 
 func TestNewPipelineEmpty(t *testing.T) {
-	p := NewPipeline("")
+	p, err := NewPipeline("")
+	require.NoError(t, err)
 	if len(p.Filters) != 0 {
 		t.Fatalf("expected 0 filters, got %d", len(p.Filters))
 	}
@@ -31,7 +37,8 @@ func TestNewPipelineSingleFilter(t *testing.T) {
 	mf, cleanup := registerMock("testA")
 	defer cleanup()
 
-	p := NewPipeline("testA")
+	p, err := NewPipeline("testA")
+	require.NoError(t, err)
 	if len(p.Filters) != 1 {
 		t.Fatalf("expected 1 filter, got %d", len(p.Filters))
 	}
@@ -46,7 +53,8 @@ func TestNewPipelineTwoFilters(t *testing.T) {
 	defer cleanupA()
 	defer cleanupB()
 
-	p := NewPipeline("testB:testC")
+	p, err := NewPipeline("testB:testC")
+	require.NoError(t, err)
 	if len(p.Filters) != 2 {
 		t.Fatalf("expected 2 filters, got %d", len(p.Filters))
 	}
@@ -62,7 +70,8 @@ func TestNewPipelineSingleFilterWithConfig(t *testing.T) {
 	mf, cleanup := registerMock("testD")
 	defer cleanup()
 
-	p := NewPipeline("testD:0.5")
+	p, err := NewPipeline("testD:0.5")
+	require.NoError(t, err)
 	if len(p.Filters) != 1 {
 		t.Fatalf("expected 1 filter, got %d", len(p.Filters))
 	}
@@ -77,7 +86,8 @@ func TestNewPipelineFilterWithConfigThenAnother(t *testing.T) {
 	defer cleanupA()
 	defer cleanupB()
 
-	p := NewPipeline("testE:0.5:testF")
+	p, err := NewPipeline("testE:0.5:testF")
+	require.NoError(t, err)
 	if len(p.Filters) != 2 {
 		t.Fatalf("expected 2 filters, got %d", len(p.Filters))
 	}
@@ -93,7 +103,8 @@ func TestNewPipelineMultipleConfigTokens(t *testing.T) {
 	mf, cleanup := registerMock("testG")
 	defer cleanup()
 
-	p := NewPipeline("testG:0.5:0.8")
+	p, err := NewPipeline("testG:0.5:0.8")
+	require.NoError(t, err)
 	if len(p.Filters) != 1 {
 		t.Fatalf("expected 1 filter, got %d", len(p.Filters))
 	}
@@ -102,11 +113,11 @@ func TestNewPipelineMultipleConfigTokens(t *testing.T) {
 	}
 }
 
-func TestNewPipelineUnknownFilterLogged(t *testing.T) {
-	p := NewPipeline("nonexistent")
-	if len(p.Filters) != 0 {
-		t.Fatalf("expected 0 filters, got %d", len(p.Filters))
-	}
+func TestNewPipelineUnknownFilterReturnsError(t *testing.T) {
+	p, err := NewPipeline("nonexistent")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nonexistent")
+	assert.Nil(t, p)
 }
 
 func TestNewPipelineFilterOrder(t *testing.T) {
@@ -115,7 +126,8 @@ func TestNewPipelineFilterOrder(t *testing.T) {
 	defer cleanupA()
 	defer cleanupB()
 
-	p := NewPipeline("testH:testI")
+	p, err := NewPipeline("testH:testI")
+	require.NoError(t, err)
 	if p.Filters[0].Name() != "testH" {
 		t.Errorf("expected first filter %q, got %q", "testH", p.Filters[0].Name())
 	}
