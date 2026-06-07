@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -34,16 +33,6 @@ func getSnapper() Snapper {
 	return nil
 }
 
-var apiRouteMethods = map[string][]string{
-	"/api/camera/play":       {http.MethodPost},
-	"/api/camera/pause":      {http.MethodPost},
-	"/api/camera/config":     {http.MethodGet, http.MethodPut},
-	"/api/storage/clips":     {http.MethodGet},
-	"/api/storage/snapshots": {http.MethodGet},
-	"/api/storage/clip":      {http.MethodPost},
-	"/api/storage/snapshot":  {http.MethodPost},
-}
-
 func RegisterAPIRoutes(mux *http.ServeMux) {
 	if mux == nil {
 		mux = http.DefaultServeMux
@@ -54,12 +43,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.Handle("/ws", http.HandlerFunc(wsHandler))
 	mux.Handle("/api/filters", Filters)
 	mux.Handle("/api/camera/snap", postOnly(http.HandlerFunc(snapHandler)))
-
-	for path, methods := range apiRouteMethods {
-		path := path
-		methods := append([]string(nil), methods...)
-		mux.Handle(path, notImplementedHandler(path, methods))
-	}
+	mux.HandleFunc("/api/camera/config", configHandler)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -98,6 +82,24 @@ func snapHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"file": file})
 }
 
+func configHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, Config)
+	case http.MethodPut:
+		if err := json.NewDecoder(r.Body).Decode(Config); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			writeJSON(w, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, Config)
+	default:
+		w.Header().Set("Allow", "GET, PUT")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 // postOnly wraps a handler to reject non-POST requests with 405.
 func postOnly(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -107,28 +109,5 @@ func postOnly(h http.Handler) http.Handler {
 			return
 		}
 		h.ServeHTTP(w, r)
-	})
-}
-
-func notImplementedHandler(path string, methods []string) http.Handler {
-	allowed := make(map[string]struct{}, len(methods))
-	for _, method := range methods {
-		allowed[method] = struct{}{}
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := allowed[r.Method]; !ok {
-			w.Header().Set("Allow", strings.Join(methods, ", "))
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotImplemented)
-		writeJSON(w, map[string]string{
-			"error":  "not implemented",
-			"path":   path,
-			"method": r.Method,
-		})
 	})
 }

@@ -5,28 +5,52 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAPIRoutesReturnNotImplementedForSupportedMethods(t *testing.T) {
+func TestConfigHandlerGet(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterAPIRoutes(mux)
 
-	for path, methods := range apiRouteMethods {
-		for _, method := range methods {
-			req := httptest.NewRequest(method, path, nil)
-			rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/camera/config", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
 
-			mux.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+	var body map[string]any
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&body))
+}
 
-			require.Equal(t, http.StatusNotImplemented, rr.Code, "%s %s", method, path)
-			assert.Contains(t, rr.Body.String(), "not implemented")
-			assert.Contains(t, rr.Body.String(), path)
-		}
-	}
+func TestConfigHandlerPut(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterAPIRoutes(mux)
+
+	body := strings.NewReader(`{"pipeline":"resize"}`)
+	req := httptest.NewRequest(http.MethodPut, "/api/camera/config", body)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	var cfg Configuration
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&cfg))
+	assert.Equal(t, "resize", cfg.Pipeline)
+}
+
+func TestConfigHandlerRejectsUnsupportedMethod(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterAPIRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/camera/config", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+	assert.Equal(t, "GET, PUT", rr.Header().Get("Allow"))
 }
 
 func TestHealthEndpointReturnsOK(t *testing.T) {
@@ -49,7 +73,7 @@ func TestAPIRoutesRejectUnsupportedMethods(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterAPIRoutes(mux)
 
-	req := httptest.NewRequest(http.MethodDelete, "/api/camera/play", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/camera/snap", nil)
 	rr := httptest.NewRecorder()
 
 	mux.ServeHTTP(rr, req)
