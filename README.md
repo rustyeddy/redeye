@@ -37,6 +37,58 @@ Flags:
 
 Exactly one video source should be specified. When none is given, device `"0"` is used.
 
+## Building
+
+```
+make          # same as make build
+make build    # build for the current host
+make test     # run the full test suite with the race detector
+make coverage # run tests and print per-function coverage
+make clean    # remove binaries and coverage artifacts
+```
+
+### Compiling for arm64 (Raspberry Pi 4 / 5)
+
+`make rpi` cross-compiles a **static** arm64 binary targeting Raspberry Pi 4 and 5
+(Cortex-A72 / A76, 64-bit).  The output is written to `redeye/redeye-rpi` so it
+does not overwrite the local development binary.
+
+**Prerequisites**
+
+1. Install the aarch64 cross-compiler:
+
+   ```
+   sudo apt install gcc-aarch64-linux-gnu
+   ```
+
+2. Provide arm64 static OpenCV libraries.  The linker needs `.a` archives for
+   OpenCV and its dependencies (e.g. from a sysroot or a pre-built static
+   package).  Without them the link step will fail with unresolved symbols.
+
+**Build**
+
+```
+make rpi
+# produces redeye/redeye-rpi — copy to the Pi and run directly
+```
+
+**Dynamically-linked fallback**
+
+If fully static linking is impractical (OpenCV static libs are large and
+platform-specific), a dynamically-linked arm64 binary works fine on any Pi
+that has OpenCV installed via `apt`:
+
+```
+CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc \
+  go build -o redeye/redeye-rpi ./redeye
+```
+
+Install OpenCV on the Pi before running:
+
+```
+sudo apt install libopencv-dev
+```
+
 ## Video Sources
 
 | Flag | Description |
