@@ -87,5 +87,6 @@ func (c *Configuration) LoadDefault() error {
 
 // ServeHTTP provides the Web service for the configuration module
 func (c Configuration) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(c)
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, c)
 }

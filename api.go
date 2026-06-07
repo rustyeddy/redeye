@@ -3,6 +3,7 @@ package redeye
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -50,16 +51,22 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	}
 }
 
+func writeJSON(w http.ResponseWriter, v any) {
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("api: json encode: %v", err)
+	}
+}
+
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	writeJSON(w, map[string]string{"status": "ok"})
 }
 
 func snapHandler(w http.ResponseWriter, r *http.Request) {
 	if activeSnapper == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(map[string]string{"error": "no active camera source"})
+		writeJSON(w, map[string]string{"error": "no active camera source"})
 		return
 	}
 
@@ -71,12 +78,12 @@ func snapHandler(w http.ResponseWriter, r *http.Request) {
 	if err := activeSnapper.Snap(file); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"file": file})
+	writeJSON(w, map[string]string{"file": file})
 }
 
 // postOnly wraps a handler to reject non-POST requests with 405.
@@ -106,7 +113,7 @@ func notImplementedHandler(path string, methods []string) http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotImplemented)
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		writeJSON(w, map[string]string{
 			"error":  "not implemented",
 			"path":   path,
 			"method": r.Method,

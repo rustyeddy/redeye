@@ -1,7 +1,6 @@
 package redeye
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -32,5 +31,5 @@ func (f FilterMap) List() []string {
 // ServeHTTP returns a JSON array of registered filter names.
 func (f FilterMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(f.List())
+	writeJSON(w, f.List())
 }
