@@ -3,7 +3,7 @@ package redeye
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -48,7 +48,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 
 func writeJSON(w http.ResponseWriter, v any) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Printf("api: json encode: %v", err)
+		slog.Error("json encode error", "err", err)
 	}
 }
 

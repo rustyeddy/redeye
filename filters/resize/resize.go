@@ -7,7 +7,7 @@ package resize
 import (
 	"encoding/json"
 	"image"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -58,13 +58,13 @@ func (r *Resize) Init(config string) {
 		r.X = v
 		r.Y = v
 	} else {
-		log.Printf("resize: invalid scale factor %q: %v", parts[0], err)
+		slog.Warn("resize invalid scale factor", "value", parts[0], "err", err)
 	}
 	if len(parts) == 2 {
 		if v, err := strconv.ParseFloat(parts[1], 64); err == nil {
 			r.Y = v
 		} else {
-			log.Printf("resize: invalid Y factor %q: %v", parts[1], err)
+			slog.Warn("resize invalid Y factor", "value", parts[1], "err", err)
 		}
 	}
 }

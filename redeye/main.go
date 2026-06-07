@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,14 +33,26 @@ func init() {
 	flag.StringVar(&config.RTSPUrl, "rtsp", "", "RTSP stream URL (e.g. rtsp://camera.local/stream)")
 	flag.StringVar(&config.MQTTBroker, "broker", "", "MQTT broker URL (e.g. tcp://localhost:1883); empty disables MQTT")
 	flag.StringVar(&config.MQTTTopicPrefix, "topic-prefix", "/redeye", "MQTT topic namespace prefix")
+	flag.StringVar(&config.LogFile, "log", "redeye.log", "log destination: stderr, stdout, or a file path")
+	flag.StringVar(&config.LogLevel, "log-level", "info", "log level: debug, info, warn, error")
 }
 
 func main() {
 	if err := config.LoadDefault(); err != nil {
-		log.Fatalf("failed to load default config: %+v", err)
+		fmt.Fprintf(os.Stderr, "failed to load default config: %v\n", err)
+		os.Exit(1)
 	}
 
 	flag.Parse()
+
+	logCloser, err := redeye.InitLogger(config.LogFile, config.LogLevel)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "logger init: %v\n", err)
+		os.Exit(1)
+	}
+	if logCloser != nil {
+		defer logCloser.Close()
+	}
 
 	// list filters and exit if command list says so
 	if config.ListFilters {
@@ -67,7 +79,8 @@ func main() {
 	// Set up the pipeline
 	pipeline, err := redeye.NewPipeline(config.Pipeline)
 	if err != nil {
-		log.Fatalf("invalid pipeline: %v", err)
+		slog.Error("invalid pipeline", "err", err)
+		os.Exit(1)
 	}
 	defer pipeline.Close()
 
@@ -85,7 +98,7 @@ func main() {
 	done := make(chan struct{})
 	go func() {
 		<-sigCh
-		log.Println("shutting down ...")
+		slog.Info("shutting down")
 		close(done)
 	}()
 
@@ -143,7 +156,7 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 		imgsrc, err = redeye.GetCam(config.VideoDevice)
 	}
 	if err != nil {
-		log.Printf("Failed to open video device %q: %+v", config.VideoDevice, err)
+		slog.Error("failed to open video device", "device", config.VideoDevice, "err", err)
 		os.Exit(1)
 	}
 	return imgsrc
@@ -162,10 +175,10 @@ func startServer() *http.Server {
 		Addr: config.HTTPAddr,
 	}
 
-	log.Printf("http: listening on %s", config.HTTPAddr)
+	slog.Info("http listening", "addr", config.HTTPAddr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("http: server error: %v", err)
+			slog.Error("http server error", "err", err)
 		}
 	}()
 	return server
@@ -182,15 +195,15 @@ func startMJPEG() *redeye.MJPEG {
 func startMessenger(config *redeye.Configuration) *redeye.Messenger {
 	m := redeye.NewMessenger(config.MQTTBroker, config.MQTTTopicPrefix)
 	if err := m.Connect(); err != nil {
-		log.Printf("MQTT disabled: %v", err)
+		slog.Info("MQTT disabled", "err", err)
 		m.Close()
 		return nil
 	}
 	if err := m.Announce(); err != nil {
-		log.Printf("MQTT announce failed: %v", err)
+		slog.Warn("MQTT announce failed", "err", err)
 	}
 	if err := m.SubscribeCommands(); err != nil {
-		log.Printf("MQTT subscribe failed: %v", err)
+		slog.Warn("MQTT subscribe failed", "err", err)
 	}
 	return m
 }

@@ -25,6 +25,9 @@ type Configuration struct {
 
 	ListFilters bool `json:"list-filters"` // List filters
 
+	LogFile  string `json:"log-file"`  // log destination: stderr, stdout, or a file path
+	LogLevel string `json:"log-level"` // debug | info | warn | error
+
 	ID    string `json:"id"`
 	Thumb string `json:"thumb"`
 	Debug bool   `json:"debug"`

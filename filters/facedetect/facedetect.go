@@ -7,7 +7,7 @@ package facedetect
 import (
 	"image"
 	"image/color"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/rustyeddy/redeye"
@@ -43,11 +43,11 @@ func (flt *FaceDetector) Init(config string) {
 		flt.XMLFile = redeye.GetConfig().CascadeFile
 	}
 	if _, err := os.Stat(flt.XMLFile); err != nil {
-		log.Printf("face-detect: cascade file not found: %s", flt.XMLFile)
+		slog.Error("face-detect cascade file not found", "path", flt.XMLFile)
 		return
 	}
 	if !flt.classifier.Load(flt.XMLFile) {
-		log.Printf("face-detect: failed to load cascade file: %s", flt.XMLFile)
+		slog.Error("face-detect failed to load cascade file", "path", flt.XMLFile)
 		return
 	}
 	flt.loaded = true

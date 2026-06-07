@@ -1,7 +1,7 @@
 package redeye
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"nhooyr.io/websocket"
@@ -15,7 +15,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		InsecureSkipVerify: true, // allow all origins; fine for a LAN camera tool
 	})
 	if err != nil {
-		log.Printf("ws: accept: %v", err)
+		slog.Error("ws accept error", "err", err)
 		return
 	}
 	defer c.Close(websocket.StatusNormalClosure, "")

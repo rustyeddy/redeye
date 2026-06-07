@@ -1,7 +1,7 @@
 package redeye
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/hybridgroup/mjpeg"
@@ -37,7 +37,7 @@ func (m *MJPEG) Play() chan *Frame {
 				}
 				buf, err := gocv.IMEncode(".jpg", *frame.Mat)
 				if err != nil {
-					log.Printf("mjpeg: encode error: %v", err)
+					slog.Error("mjpeg encode error", "err", err)
 					continue
 				}
 				m.Stream.UpdateJPEG(buf.GetBytes())

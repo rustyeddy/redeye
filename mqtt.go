@@ -3,7 +3,7 @@ package redeye
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -72,7 +72,7 @@ func (m *Messenger) Connect() error {
 		m.client = nil // clear partial paho state
 		return fmt.Errorf("MQTT: connect to %s: %w", m.Broker, tok.Error())
 	}
-	log.Printf("MQTT: connected to %s as %q", m.Broker, m.Name)
+	slog.Info("MQTT connected", "broker", m.Broker, "client", m.Name)
 	return nil
 }
 
@@ -132,7 +132,7 @@ func (m *Messenger) subscribe(topic string) error {
 	m.mu.Lock()
 	m.subscriptions = append(m.subscriptions, topic)
 	m.mu.Unlock()
-	log.Printf("MQTT: subscribed to %s", topic)
+	slog.Info("MQTT subscribed", "topic", topic)
 	return nil
 }
 
@@ -153,10 +153,10 @@ func (m *Messenger) publish(topic, payload string) error {
 func (m *Messenger) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 	var cmd Command
 	if err := json.Unmarshal(msg.Payload(), &cmd); err != nil {
-		log.Printf("MQTT: malformed payload on %s: %v", msg.Topic(), err)
+		slog.Error("MQTT malformed payload", "topic", msg.Topic(), "err", err)
 		return
 	}
-	log.Printf("MQTT [in] topic=%s command=%q", msg.Topic(), cmd.Command)
+	slog.Debug("MQTT command received", "topic", msg.Topic(), "command", cmd.Command)
 
 	switch cmd.Command {
 	case "snap":
@@ -166,14 +166,14 @@ func (m *Messenger) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 		}
 		if s := getSnapper(); s != nil {
 			if err := s.Snap(file); err != nil {
-				log.Printf("MQTT snap error: %v", err)
+				slog.Error("MQTT snap error", "err", err)
 			} else {
-				log.Printf("MQTT snap: saved %s", file)
+				slog.Info("MQTT snap saved", "file", file)
 			}
 		} else {
-			log.Println("MQTT snap: no active camera source")
+			slog.Warn("MQTT snap: no active camera source")
 		}
 	default:
-		log.Printf("MQTT: unknown command %q on %s", cmd.Command, msg.Topic())
+		slog.Warn("MQTT unknown command", "command", cmd.Command, "topic", msg.Topic())
 	}
 }
