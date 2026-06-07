@@ -33,9 +33,77 @@ Flags:
   -topic-prefix string  MQTT topic namespace prefix (default "/redeye")
   -cascade-file string  Haar cascade XML for face detection
   -filters              List available filters and exit
+  -plugins string       Directory of .so filter plugins to load at startup (default "plugins")
 ```
 
 Exactly one video source should be specified. When none is given, device `"0"` is used.
+
+## Filter Pipeline
+
+Redeye processes each video frame through an ordered pipeline of filters.
+Filters are applied left-to-right in the order they were added.
+
+### Built-in filters
+
+| Name | Description |
+|---|---|
+| `resize` | Scale the frame by X and Y factors (default 1.0) |
+| `face-detect` | Haar cascade face detection; emits WebSocket detection events |
+| `color-detect` | Colour detection stub (not yet implemented) |
+| `textzoom` | Text zoom overlay |
+
+### Specifying a pipeline
+
+Pass a colon-separated list to `-pipeline`. Filter names and their config
+values share the same colon delimiter; a token that matches a registered
+filter name starts a new filter, anything else is treated as config for the
+current one:
+
+```
+redeye -pipeline resize:0.5:face-detect
+#  → resize.Init("0.5"), face-detect.Init("")
+
+redeye -pipeline resize:0.5:0.75:face-detect
+#  → resize.Init("0.5:0.75"), face-detect.Init("")
+```
+
+### Runtime pipeline control
+
+The active pipeline can be changed at any time without restarting:
+
+| Method | Path | Body | Effect |
+|---|---|---|---|
+| `GET` | `/api/camera/pipeline` | — | Return current pipeline descriptor |
+| `POST` | `/api/camera/pipeline` | `filter=<name>` | Toggle a filter on or off |
+| `POST` | `/api/camera/pipeline` | `pipeline=<str>` | Replace the entire pipeline |
+| `POST` | `/api/camera/pipeline` | `pipeline=` | Clear the pipeline |
+
+The web UI sends these automatically when you click filter toggle buttons.
+
+### Filter parameters
+
+Filters that implement the `Parametric` interface expose runtime-adjustable
+parameters as inline sliders in the web UI.  Parameter changes are sent via:
+
+```
+POST /api/camera/filter/param
+  filter=<name>    name of the filter
+  <key>=<value>    one field per parameter (float values)
+```
+
+**`resize` parameters:**
+
+| Key | Label | Range | Default |
+|---|---|---|---|
+| `x` | Scale X | 0.1 – 2.0 | 1.0 |
+| `y` | Scale Y | 0.1 – 2.0 | 1.0 |
+
+New filters gain automatic UI controls by implementing two methods:
+
+```go
+func (f *MyFilter) Params() []redeye.ParamDesc { ... }
+func (f *MyFilter) SetParam(key string, value float64) error { ... }
+```
 
 ## Building
 
@@ -45,6 +113,7 @@ make build    # build for the current host
 make test     # run the full test suite with the race detector
 make coverage # run tests and print per-function coverage
 make clean    # remove binaries and coverage artifacts
+make plugins  # build all filter plugins as .so shared libraries
 ```
 
 ### Compiling for arm64 (Raspberry Pi 4 / 5)
@@ -87,6 +156,81 @@ Install OpenCV on the Pi before running:
 
 ```
 sudo apt install libopencv-dev
+```
+
+### Filter plugins
+
+Filters can be compiled as Go shared libraries (`.so`) and loaded at runtime
+without recompiling the host binary.  This lets you ship or iterate on filters
+independently.
+
+**Constraint:** the plugin and the host binary must be compiled with the **same
+Go toolchain version** and **identical dependency versions**.  Build both on the
+same machine.  The static RPi cross-build (`make rpi`) is incompatible with
+plugins — use the dynamically-linked fallback instead.
+
+#### Building plugins
+
+```bash
+make plugins              # builds all plugins under plugins/
+# or individually:
+go build -buildmode=plugin -tags plugin -o plugins/grayscale.so ./plugins/grayscale
+```
+
+Drop the resulting `.so` files into the `plugins/` directory (or whichever path
+is given to `--plugins`).  They are loaded automatically on the next startup.
+
+#### Hot-loading at runtime
+
+Load a plugin without restarting the server:
+
+```bash
+curl -X POST http://localhost:9382/api/plugins/load \
+     -H 'Content-Type: application/json' \
+     -d '{"path": "plugins/grayscale.so"}'
+```
+
+The newly registered filters appear immediately in the web UI filter list.
+
+#### Writing a plugin
+
+Create a new directory under `plugins/` with a `main.go`:
+
+```go
+//go:build plugin
+
+package main
+
+import "github.com/rustyeddy/redeye"
+
+type MyFilter struct{ redeye.Flt }
+
+func (f *MyFilter) Init(_ string)                      {}
+func (f *MyFilter) Filter(fr *redeye.Frame) *redeye.Frame { /* process fr.Mat */ return fr }
+
+func init() {
+    redeye.Filters.Add("my-filter", &MyFilter{
+        Flt: redeye.NewFlt("my-filter", "one-line description"),
+    })
+}
+```
+
+The `//go:build plugin` tag keeps the file out of regular `go build ./...` runs.
+The `init()` function is the only required contract — it is called automatically
+when the host opens the `.so` with `plugin.Open`.
+
+To expose runtime-adjustable parameters, also implement `Parametric`:
+
+```go
+func (f *MyFilter) Params() []redeye.ParamDesc {
+    return []redeye.ParamDesc{
+        {Key: "strength", Label: "Strength", Type: "float", Min: 0, Max: 1, Step: 0.05, Value: f.strength},
+    }
+}
+func (f *MyFilter) SetParam(key string, v float64) error {
+    if key == "strength" { f.strength = v; return nil }
+    return fmt.Errorf("unknown param %q", key)
+}
 ```
 
 ## Video Sources
@@ -182,11 +326,13 @@ mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
 1. Multiple video sources: USB camera, RTSP network stream, local video file, static image
 2. Platform camera name aliases: `jetson`/`nano` (GStreamer), `rpi`/`linux` (`/dev/video0`), `mac`
 3. MJPEG streaming over HTTP at `/mjpeg`
-4. Configurable computer vision filter pipeline (resize, face detection)
-5. REST API with `GET /health` liveness endpoint and `POST /api/camera/snap` snapshot capture
-6. MQTT pub/sub for distributed multi-camera control
-7. WebSocket endpoint (`/ws`) for real-time event push; embedded web UI at `/`
-8. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
+4. Configurable computer vision filter pipeline (resize, face detection) with runtime toggle and reorder
+5. Per-filter runtime parameter controls (sliders in the web UI, REST API, or MQTT)
+6. Go plugin system — load `.so` filter plugins at startup or hot-load without restart
+7. REST API with `GET /health` liveness endpoint and `POST /api/camera/snap` snapshot capture
+8. MQTT pub/sub for distributed multi-camera control
+9. WebSocket endpoint (`/ws`) for real-time event push; embedded web UI at `/`
+10. Config file support (`redeye.json` or `~/.redeye.json`, overridden by flags)
 
 ## REST API & WebSocket
 
@@ -197,6 +343,10 @@ mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
 | `GET` | `/mjpeg` | Live MJPEG video stream |
 | `GET` | `/ws` | WebSocket — server pushes JSON events to the browser |
 | `POST` | `/api/camera/snap` | Save current frame to disk |
+| `GET` | `/api/camera/pipeline` | Return current pipeline descriptor string |
+| `POST` | `/api/camera/pipeline` | Toggle a filter or replace the entire pipeline |
+| `POST` | `/api/camera/filter/param` | Update one or more parameters on a Parametric filter |
+| `POST` | `/api/plugins/load` | Hot-load a `.so` filter plugin at runtime |
 
 ### WebSocket events
 
