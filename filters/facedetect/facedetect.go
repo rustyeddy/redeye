@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"os"
 
 	"github.com/rustyeddy/redeye"
 	"gocv.io/x/gocv"
@@ -41,8 +42,12 @@ func (flt *FaceDetector) Init(config string) {
 	} else {
 		flt.XMLFile = redeye.GetConfig().CascadeFile
 	}
+	if _, err := os.Stat(flt.XMLFile); err != nil {
+		log.Printf("face-detect: cascade file not found: %s", flt.XMLFile)
+		return
+	}
 	if !flt.classifier.Load(flt.XMLFile) {
-		log.Printf("face-detect: failed to load cascade file: %v", flt.XMLFile)
+		log.Printf("face-detect: failed to load cascade file: %s", flt.XMLFile)
 		return
 	}
 	flt.loaded = true
