@@ -4,79 +4,268 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Redeye</title>
+  <!-- htmx — for offline deployments download to static/ and change the src -->
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body   { font-family: monospace; margin: 1rem; background: #111; color: #ddd; }
-    h1     { color: #e04040; margin: 0 0 .75rem; }
-    #status { display: inline-block; padding: .15rem .5rem; border-radius: 3px;
-              font-size: .75rem; vertical-align: middle; }
-    .on    { background: #1a4a1a; color: #4c4; }
-    .off   { background: #4a1a1a; color: #c44; }
-    .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-top:.75rem; }
-    img    { width: 100%; border: 1px solid #333; display: block; }
-    h3     { margin: 0 0 .4rem; font-size: .9rem; color: #aaa; }
-    #log   { list-style: none; padding: 0; margin: 0; max-height: 70vh;
-              overflow-y: auto; }
-    #log li { padding: .2rem .4rem; border-bottom: 1px solid #222;
-               font-size: .78rem; white-space: pre-wrap; word-break: break-all; }
+    body {
+      font-family: monospace;
+      margin: 0;
+      padding: 1rem;
+      background: #111;
+      color: #ddd;
+    }
+
+    /* ── header ── */
+    header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1rem; }
+    h1 { color: #e04040; margin: 0; font-size: 1.4rem; }
+    h3 { margin: 0 0 .5rem; font-size: .88rem; color: #aaa; text-transform: uppercase; letter-spacing: .04em; }
+    .badge { padding: .15rem .5rem; border-radius: 3px; font-size: .72rem; }
+    .on  { background: #1a4a1a; color: #4c4; }
+    .off { background: #4a1a1a; color: #c44; }
+
+    /* ── main grid: stream | sidebar ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .stream-panel img {
+      width: 100%;
+      border: 1px solid #333;
+      display: block;
+    }
+    .side-panel { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ── cards ── */
+    .card {
+      background: #181818;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      padding: .75rem;
+    }
+
+    /* ── config accordion ── */
+    details.card { margin-bottom: 1rem; }
+    details.card > summary {
+      cursor: pointer;
+      font-size: .88rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      user-select: none;
+      list-style: none;
+    }
+    details.card > summary::before { content: '▶ '; font-size: .7rem; }
+    details[open].card > summary::before { content: '▼ '; }
+    details.card > summary:hover { color: #ddd; }
+    details.card > div { margin-top: .75rem; }
+
+    /* ── form elements ── */
+    .input-row { display: flex; gap: .5rem; }
+    input[type="text"], select {
+      background: #1e1e1e;
+      border: 1px solid #383838;
+      color: #ddd;
+      padding: .3rem .5rem;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: .83rem;
+    }
+    input[type="text"] { flex: 1; min-width: 0; }
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: #55f;
+    }
+    select { background: #1e1e1e; }
+    .btn {
+      background: #1e1e4a;
+      border: 1px solid #338;
+      color: #99f;
+      padding: .3rem .8rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: .83rem;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #2a2a6a; border-color: #55f; }
+
+    /* ── config form ── */
+    .config-form { display: grid; gap: .55rem; }
+    .field-row {
+      display: grid;
+      grid-template-columns: 10rem 1fr;
+      align-items: center;
+      gap: .5rem;
+    }
+    .field-row label { font-size: .82rem; color: #888; }
+    .field-row input, .field-row select { width: 100%; }
+    .config-form .btn { justify-self: start; margin-top: .25rem; }
+    .form-message {
+      margin: 0;
+      padding: .3rem .55rem;
+      border-radius: 3px;
+      background: #1a3a1a;
+      color: #6d6;
+      font-size: .82rem;
+      border: 1px solid #2a4a2a;
+    }
+
+    /* ── filter list ── */
+    .filter-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: .82rem;
+    }
+    .filter-list li {
+      padding: .25rem 0;
+      border-bottom: 1px solid #222;
+    }
+    .filter-list li:last-child { border-bottom: none; }
+    .filter-list strong { color: #99f; }
+
+    /* ── alerts ── */
+    .alert {
+      margin-top: .5rem;
+      padding: .35rem .6rem;
+      border-radius: 3px;
+      font-size: .82rem;
+    }
+    .alert-success { background: #1a3a1a; color: #6d6; border: 1px solid #2a4a2a; }
+    .alert-error   { background: #3a1a1a; color: #d66; border: 1px solid #4a2a2a; }
+
+    /* ── event log ── */
+    #log {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+    #log li {
+      padding: .2rem .4rem;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: .78rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
     #log li.new { color: #88aaff; }
+
+    .muted { color: #555; font-size: .82rem; margin: 0; }
+    .htmx-indicator { display: none; }
+
+    @media (max-width: 700px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .field-row { grid-template-columns: 1fr; }
+      .field-row label { margin-bottom: -.25rem; }
+    }
   </style>
 </head>
 <body>
-  <h1>Redeye &nbsp;<span id="status" class="off">disconnected</span></h1>
-  <div class="layout">
-    <div>
-      <img id="stream" src="/mjpeg" alt="live stream">
-    </div>
-    <div>
-      <h3>Live events</h3>
-      <ul id="log"></ul>
-    </div>
+
+<header>
+  <h1>Redeye</h1>
+  <span id="status" class="badge off">disconnected</span>
+</header>
+
+<div class="main-grid">
+
+  <!-- Live stream -->
+  <div class="stream-panel">
+    <img id="stream" src="/mjpeg" alt="live stream">
   </div>
 
-  <script>
-    const statusEl = document.getElementById('status');
-    const logEl    = document.getElementById('log');
-    const MAX_ROWS = 50;
+  <!-- Controls sidebar -->
+  <div class="side-panel">
 
-    function addRow(text) {
-      const li = document.createElement('li');
-      li.className = 'new';
-      li.textContent = new Date().toLocaleTimeString() + '  ' + text;
-      logEl.prepend(li);
-      // Fade new highlight after a tick.
-      requestAnimationFrame(() => requestAnimationFrame(() => li.className = ''));
-      while (logEl.children.length > MAX_ROWS) logEl.lastChild.remove();
-    }
+    <!-- Snapshot -->
+    <div class="card">
+      <h3>Snapshot</h3>
+      <form hx-post="/api/camera/snap" hx-target="#snap-result">
+        <div class="input-row">
+          <input type="text" name="file" placeholder="filename.jpg (auto if blank)">
+          <button type="submit" class="btn">Snap</button>
+        </div>
+      </form>
+      <div id="snap-result"></div>
+    </div>
 
-    function connect() {
-      const ws = new WebSocket('ws://' + location.host + '/ws');
+    <!-- Available filters -->
+    <div class="card">
+      <h3>Filters</h3>
+      <div hx-get="/api/filters"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <p class="muted">Loading…</p>
+      </div>
+    </div>
 
-      ws.onopen = () => {
-        statusEl.textContent = 'connected';
-        statusEl.className = 'on';
-      };
+  </div>
+</div>
 
-      ws.onmessage = (ev) => {
-        try {
-          const e = JSON.parse(ev.data);
-          const pay = e.payload !== undefined ? JSON.stringify(e.payload) : '';
-          addRow('[' + e.type + '] ' + pay);
-        } catch {
-          addRow(ev.data);
-        }
-      };
+<!-- Configuration (collapsed by default) -->
+<details class="card">
+  <summary>Configuration</summary>
+  <div hx-get="/api/camera/config"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <p class="muted">Loading…</p>
+  </div>
+</details>
 
-      ws.onclose = () => {
-        statusEl.textContent = 'disconnected';
-        statusEl.className = 'off';
-        setTimeout(connect, 2000);   // auto-reconnect
-      };
+<!-- Live event log -->
+<div class="card">
+  <h3>Live Events</h3>
+  <ul id="log"></ul>
+</div>
 
-      ws.onerror = () => ws.close();
-    }
+<script>
+  const statusEl = document.getElementById('status');
+  const logEl    = document.getElementById('log');
+  const MAX_ROWS = 50;
 
-    connect();
-  </script>
+  function addRow(text) {
+    const li = document.createElement('li');
+    li.className = 'new';
+    li.textContent = new Date().toLocaleTimeString() + '  ' + text;
+    logEl.prepend(li);
+    requestAnimationFrame(() => requestAnimationFrame(() => li.className = ''));
+    while (logEl.children.length > MAX_ROWS) logEl.lastChild.remove();
+  }
+
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(proto + '://' + location.host + '/ws');
+
+    ws.onopen = () => {
+      statusEl.textContent = 'connected';
+      statusEl.className = 'badge on';
+    };
+
+    ws.onmessage = (ev) => {
+      try {
+        const e = JSON.parse(ev.data);
+        const pay = e.payload !== undefined ? JSON.stringify(e.payload) : '';
+        addRow('[' + e.type + '] ' + pay);
+      } catch {
+        addRow(ev.data);
+      }
+    };
+
+    ws.onclose = () => {
+      statusEl.textContent = 'disconnected';
+      statusEl.className = 'badge off';
+      setTimeout(connect, 2000);
+    };
+
+    ws.onerror = () => ws.close();
+  }
+
+  connect();
+</script>
+
 </body>
 </html>

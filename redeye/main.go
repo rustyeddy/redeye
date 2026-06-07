@@ -24,7 +24,7 @@ var (
 func init() {
 	config = redeye.GetConfig()
 	flag.StringVar(&config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
-	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:8080", "Default http addr 8080")
+	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:9382", "Default http addr 8080")
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.StringVar(&config.VideoDevice, "device", "0", "Camera device: index (0,1,…), name (jetson,nano,rpi,linux,mac), or path (/dev/video0)")

@@ -1,0 +1,45 @@
+<form hx-put="/api/camera/config" hx-swap="outerHTML" class="config-form">
+  {{if .Message}}<p class="form-message">{{.Message}}</p>{{end}}
+
+  <div class="field-row">
+    <label for="cfg-pipeline">Pipeline</label>
+    <input id="cfg-pipeline" name="pipeline" type="text"
+           value="{{.Config.Pipeline}}" placeholder="e.g. resize:0.5:face-detect">
+  </div>
+
+  <div class="field-row">
+    <label for="cfg-cascade">Cascade File</label>
+    <input id="cfg-cascade" name="cascade-file" type="text"
+           value="{{.Config.CascadeFile}}">
+  </div>
+
+  <div class="field-row">
+    <label for="cfg-broker">MQTT Broker</label>
+    <input id="cfg-broker" name="broker" type="text"
+           value="{{.Config.MQTTBroker}}" placeholder="tcp://localhost:1883">
+  </div>
+
+  <div class="field-row">
+    <label for="cfg-topic">Topic Prefix</label>
+    <input id="cfg-topic" name="topic-prefix" type="text"
+           value="{{.Config.MQTTTopicPrefix}}">
+  </div>
+
+  <div class="field-row">
+    <label for="cfg-log">Log Destination</label>
+    <input id="cfg-log" name="log" type="text"
+           value="{{.Config.LogFile}}" placeholder="redeye.log, stderr, or stdout">
+  </div>
+
+  <div class="field-row">
+    <label for="cfg-loglevel">Log Level</label>
+    <select id="cfg-loglevel" name="log-level">
+      <option value="debug"{{if eq .Config.LogLevel "debug"}} selected{{end}}>debug</option>
+      <option value="info"{{if eq .Config.LogLevel "info"}} selected{{end}}>info</option>
+      <option value="warn"{{if eq .Config.LogLevel "warn"}} selected{{end}}>warn</option>
+      <option value="error"{{if eq .Config.LogLevel "error"}} selected{{end}}>error</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn">Save</button>
+</form>

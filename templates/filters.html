@@ -1,0 +1,9 @@
+{{if .}}
+<ul class="filter-list">
+{{range .}}
+  <li><strong>{{.Name}}</strong> — {{.Desc}}</li>
+{{end}}
+</ul>
+{{else}}
+<p class="muted">No filters registered.</p>
+{{end}}

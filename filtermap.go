@@ -2,6 +2,7 @@ package redeye
 
 import (
 	"net/http"
+	"sort"
 )
 
 // FilterMap is a named registry of Filter implementations.
@@ -28,8 +29,18 @@ func (f FilterMap) List() []string {
 	return names
 }
 
-// ServeHTTP returns a JSON array of registered filter names.
+// ServeHTTP returns the filter registry as a JSON array or an HTML fragment,
+// depending on whether the request was issued by htmx.
 func (f FilterMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if isHTMX(r) {
+		entries := make([]filterEntry, 0, len(f))
+		for _, flt := range f {
+			entries = append(entries, filterEntry{Name: flt.Name(), Desc: flt.Desc()})
+		}
+		sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+		renderTemplate(w, "filters.html", entries)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	writeJSON(w, f.List())
 }

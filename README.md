@@ -114,6 +114,69 @@ sudo apt install libopencv-dev
 | `mac`, `default`, `0`, *(empty)* | `0` (OpenCV default device) |
 | anything else | passed through unchanged |
 
+## Web UI
+
+Redeye ships a browser UI served at `/`. It is built with **[htmx](https://htmx.org)** for
+server-driven controls and vanilla JS for the live event stream.
+
+### Layout
+
+```
+┌─────────────────────────────┬──────────────────────┐
+│  Live MJPEG stream          │  Snapshot            │
+│                             │  [filename]  [Snap]  │
+│                             │  ─────────────────── │
+│                             │  Filters             │
+│                             │  (loaded on demand)  │
+├─────────────────────────────┴──────────────────────┤
+│  ▶ Configuration  (click to expand)                │
+│    Pipeline, MQTT, cascade file, log settings      │
+├────────────────────────────────────────────────────┤
+│  Live Events  (WebSocket, auto-reconnect)          │
+└────────────────────────────────────────────────────┘
+```
+
+### Content negotiation
+
+All UI routes are shared with the JSON API. The server detects htmx requests via
+the `HX-Request: true` header and returns an HTML fragment; regular API clients
+receive JSON as before.
+
+| Route | API (JSON) | Browser (HTML fragment) |
+|---|---|---|
+| `GET /api/filters` | JSON array of filter names | Rendered filter list |
+| `GET /api/camera/config` | JSON config object | Populated config form |
+| `PUT /api/camera/config` | JSON body → JSON response | Form body → re-rendered form |
+| `POST /api/camera/snap` | `?file=` query param | `name="file"` form field |
+
+### Templates
+
+HTML fragments live in `templates/*.html` and are embedded into the binary at
+build time via `//go:embed`. The Go handler renders them with `html/template`
+before sending the response.
+
+| Template | Data type | Purpose |
+|---|---|---|
+| `templates/snap.html` | `snapData{File, Error}` | Snap success / error feedback |
+| `templates/config.html` | `configFormData{Config, Message}` | Config form (GET + after PUT) |
+| `templates/filters.html` | `[]filterEntry{Name, Desc}` | Available filter list |
+
+### Offline deployments
+
+The UI loads htmx from the unpkg CDN. On devices without internet access,
+download the file and serve it locally:
+
+```bash
+curl -o static/htmx.min.js https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js
+```
+
+Then change the `<script src>` in `static/index.html` to `/static/htmx.min.js`
+and add a route in `RegisterAPIRoutes`:
+
+```go
+mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
+```
+
 ## Working Features
 
 1. Multiple video sources: USB camera, RTSP network stream, local video file, static image
