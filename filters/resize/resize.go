@@ -6,6 +6,7 @@ package resize
 
 import (
 	"encoding/json"
+	"fmt"
 	"image"
 	"log/slog"
 	"net/http"
@@ -75,6 +76,31 @@ func (r *Resize) Filter(frame *redeye.Frame) *redeye.Frame {
 	r.mu.RUnlock()
 	gocv.Resize(*frame.Mat, frame.Mat, image.Point{}, x, y, gocv.InterpolationArea)
 	return frame
+}
+
+// Params implements redeye.Parametric, exposing X and Y scale factors as UI controls.
+func (r *Resize) Params() []redeye.ParamDesc {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return []redeye.ParamDesc{
+		{Key: "x", Label: "Scale X", Type: "float", Min: 0.1, Max: 2.0, Step: 0.05, Value: r.X},
+		{Key: "y", Label: "Scale Y", Type: "float", Min: 0.1, Max: 2.0, Step: 0.05, Value: r.Y},
+	}
+}
+
+// SetParam implements redeye.Parametric.
+func (r *Resize) SetParam(key string, value float64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	switch key {
+	case "x":
+		r.X = value
+	case "y":
+		r.Y = value
+	default:
+		return fmt.Errorf("resize: unknown param %q", key)
+	}
+	return nil
 }
 
 // ServeHTTP accepts a JSON body to update X, Y, and Interp at runtime.

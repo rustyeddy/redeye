@@ -1,16 +1,16 @@
 <div id="pipeline-section" class="card">
   <h3>Pipeline</h3>
 
-  {{if .Active}}
+  {{if .ActiveOrdered}}
   <div class="pipeline-tags">
-    {{range .Registered}}{{if index $.Active .Name}}
+    {{range .ActiveOrdered}}
     <button class="pipeline-tag"
             hx-post="/api/camera/pipeline"
             hx-vals='{"filter": "{{.Name}}"}'
             hx-target="#pipeline-section"
             hx-swap="outerHTML"
             title="Remove {{.Name}}">{{.Name}} ×</button>
-    {{end}}{{end}}
+    {{end}}
   </div>
   {{else}}
   <p class="muted pipeline-empty">No filters active. Click one below to add it.</p>
@@ -25,13 +25,34 @@
 
   <ul class="filter-list">
   {{range .Registered}}
-  <li>
-    <button class="filter-toggle{{if index $.Active .Name}} active{{end}}"
-            hx-post="/api/camera/pipeline"
-            hx-vals='{"filter": "{{.Name}}"}'
-            hx-target="#pipeline-section"
-            hx-swap="outerHTML">{{.Name}}</button>
-    <span class="filter-desc">{{.Desc}}</span>
+  <li class="filter-item">
+    <div class="filter-row">
+      <button class="filter-toggle{{if index $.Active .Name}} active{{end}}"
+              hx-post="/api/camera/pipeline"
+              hx-vals='{"filter": "{{.Name}}"}'
+              hx-target="#pipeline-section"
+              hx-swap="outerHTML">{{.Name}}</button>
+      <span class="filter-desc">{{.Desc}}</span>
+    </div>
+    {{if .Params}}
+    <form class="filter-params"
+          hx-post="/api/camera/filter/param"
+          hx-target="#pipeline-section"
+          hx-swap="outerHTML"
+          hx-trigger="change">
+      <input type="hidden" name="filter" value="{{.Name}}">
+      {{range .Params}}
+      <div class="param-row">
+        <label class="param-label">{{.Label}}</label>
+        <input type="range" class="param-range"
+               name="{{.Key}}"
+               min="{{.Min}}" max="{{.Max}}" step="{{.Step}}" value="{{.Value}}"
+               oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)">
+        <span class="param-val">{{printf "%.2f" .Value}}</span>
+      </div>
+      {{end}}
+    </form>
+    {{end}}
   </li>
   {{end}}
   </ul>

@@ -167,6 +167,26 @@
     .pipeline-empty { color: #444; font-size: .8rem; margin: 0 0 .5rem; }
     .btn-sm { padding: .15rem .5rem; font-size: .78rem; }
 
+    /* ── filter items ── */
+    .filter-item { flex-direction: column; align-items: stretch; }
+    .filter-row  { display: flex; align-items: baseline; gap: .5rem; }
+
+    /* ── inline param controls ── */
+    .filter-params { margin: .4rem 0 .2rem 0; display: grid; gap: .3rem; }
+    .param-row {
+      display: grid;
+      grid-template-columns: 5rem 1fr 3rem;
+      align-items: center;
+      gap: .4rem;
+    }
+    .param-label { font-size: .76rem; color: #777; }
+    .param-range {
+      width: 100%;
+      accent-color: #55f;
+      cursor: pointer;
+    }
+    .param-val { font-size: .76rem; color: #99f; text-align: right; }
+
     /* ── alerts ── */
     .alert {
       margin-top: .5rem;
@@ -241,6 +261,12 @@
       <p class="muted">Loading…</p>
     </div>
 
+    <!-- Live event log -->
+    <div class="card">
+      <h3>Live Events</h3>
+      <ul id="log"></ul>
+    </div>
+
   </div>
 </div>
 
@@ -253,12 +279,6 @@
     <p class="muted">Loading…</p>
   </div>
 </details>
-
-<!-- Live event log -->
-<div class="card">
-  <h3>Live Events</h3>
-  <ul id="log"></ul>
-</div>
 
 <script>
   const statusEl = document.getElementById('status');

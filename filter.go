@@ -9,6 +9,24 @@ type Filter interface {
 	Filter(*Frame) *Frame
 }
 
+// ParamDesc describes one runtime-adjustable parameter of a filter.
+type ParamDesc struct {
+	Key   string  // form field name / SetParam key
+	Label string  // human-readable label shown in the UI
+	Type  string  // "float" or "int"
+	Min   float64
+	Max   float64
+	Step  float64
+	Value float64 // current value
+}
+
+// Parametric is an optional interface for filters that expose runtime-adjustable
+// parameters. Implement it alongside Filter to get automatic inline UI controls.
+type Parametric interface {
+	Params() []ParamDesc
+	SetParam(key string, value float64) error
+}
+
 // Flt is an embeddable struct that satisfies the Name() and Desc() methods
 // of the Filter interface. Initialise it with NewFlt.
 type Flt struct {

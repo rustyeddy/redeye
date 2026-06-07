@@ -43,29 +43,43 @@ type configFormData struct {
 }
 
 // filterEntry is a name/description pair used in filter and pipeline templates.
+// Params is non-nil only when the filter is active and implements Parametric.
 type filterEntry struct {
-	Name string
-	Desc string
+	Name   string
+	Desc   string
+	Params []ParamDesc
 }
 
 // pipelineViewData is passed to templates/pipeline.html.
 type pipelineViewData struct {
-	ActiveStr  string          // descriptor string of the active pipeline
-	Active     map[string]bool // set of active filter names
-	Registered []filterEntry   // all registered filters, sorted by name
+	ActiveStr     string          // descriptor string of the active pipeline
+	Active        map[string]bool // set of active filter names (for O(1) lookup)
+	ActiveOrdered []filterEntry   // active filters in pipeline execution order
+	Registered    []filterEntry   // all registered filters, sorted by name
 }
 
 // buildPipelineViewData assembles a pipelineViewData from the current state.
 func buildPipelineViewData() pipelineViewData {
 	p := GetPipeline()
+
 	active := make(map[string]bool, len(p.Filters))
+	activeOrdered := make([]filterEntry, 0, len(p.Filters))
 	for _, flt := range p.Filters {
 		active[flt.Name()] = true
+		activeOrdered = append(activeOrdered, filterEntry{Name: flt.Name(), Desc: flt.Desc()})
 	}
+
 	entries := make([]filterEntry, 0, len(Filters))
 	for _, flt := range Filters {
-		entries = append(entries, filterEntry{Name: flt.Name(), Desc: flt.Desc()})
+		var params []ParamDesc
+		if active[flt.Name()] {
+			if pp, ok := flt.(Parametric); ok {
+				params = pp.Params()
+			}
+		}
+		entries = append(entries, filterEntry{Name: flt.Name(), Desc: flt.Desc(), Params: params})
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
-	return pipelineViewData{ActiveStr: p.Str, Active: active, Registered: entries}
+
+	return pipelineViewData{ActiveStr: p.Str, Active: active, ActiveOrdered: activeOrdered, Registered: entries}
 }

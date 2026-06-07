@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -46,6 +47,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.Handle("/api/camera/snap", postOnly(http.HandlerFunc(snapHandler)))
 	mux.HandleFunc("/api/camera/config", configHandler)
 	mux.HandleFunc("/api/camera/pipeline", pipelineHandler)
+	mux.HandleFunc("/api/camera/filter/param", filterParamHandler)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -233,6 +235,52 @@ func pipelineHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// filterParamHandler updates one or more parameters on an active Parametric filter.
+//
+//	POST /api/camera/filter/param
+//	  filter=<name>   name of the filter to update
+//	  <key>=<value>   one form field per parameter (float values)
+func filterParamHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	filterName := r.FormValue("filter")
+	flt, ok := Filters.Get(filterName)
+	if !ok {
+		http.Error(w, "filter not found: "+filterName, http.StatusNotFound)
+		return
+	}
+	p, ok := flt.(Parametric)
+	if !ok {
+		http.Error(w, "filter has no parameters: "+filterName, http.StatusBadRequest)
+		return
+	}
+	for key, vals := range r.Form {
+		if key == "filter" || len(vals) == 0 {
+			continue
+		}
+		v, err := strconv.ParseFloat(vals[0], 64)
+		if err != nil {
+			continue
+		}
+		if err := p.SetParam(key, v); err != nil {
+			slog.Warn("filter param set failed", "filter", filterName, "key", key, "err", err)
+		}
+	}
+	if isHTMX(r) {
+		renderTemplate(w, "pipeline.html", buildPipelineViewData())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, map[string]string{"ok": "1"})
 }
 
 // postOnly wraps a handler to reject non-POST requests with 405.
