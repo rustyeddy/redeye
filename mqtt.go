@@ -69,6 +69,7 @@ func (m *Messenger) Connect() error {
 	m.client = mqtt.NewClient(opts)
 	tok := m.client.Connect()
 	if tok.Wait() && tok.Error() != nil {
+		m.client = nil // clear partial paho state
 		return fmt.Errorf("MQTT: connect to %s: %w", m.Broker, tok.Error())
 	}
 	log.Printf("MQTT: connected to %s as %q", m.Broker, m.Name)

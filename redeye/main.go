@@ -183,6 +183,7 @@ func startMessenger(config *redeye.Configuration) *redeye.Messenger {
 	m := redeye.NewMessenger(config.MQTTBroker, config.MQTTTopicPrefix)
 	if err := m.Connect(); err != nil {
 		log.Printf("MQTT disabled: %v", err)
+		m.Close()
 		return nil
 	}
 	if err := m.Announce(); err != nil {
