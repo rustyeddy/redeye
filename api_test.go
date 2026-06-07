@@ -75,9 +75,9 @@ func snapMux(t *testing.T, snapper Snapper) *http.ServeMux {
 	t.Helper()
 	// Each test gets a fresh mux and snapper so tests don't share global state.
 	mux := http.NewServeMux()
-	prev := activeSnapper
-	activeSnapper = snapper
-	t.Cleanup(func() { activeSnapper = prev })
+	prev := activeSnapper.Load()
+	SetSnapper(snapper)
+	t.Cleanup(func() { activeSnapper.Store(prev) })
 	RegisterAPIRoutes(mux)
 	return mux
 }

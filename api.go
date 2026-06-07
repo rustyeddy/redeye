@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -15,12 +16,22 @@ type Snapper interface {
 }
 
 // activeSnapper is set once at startup by SetSnapper; nil means no source is running.
-var activeSnapper Snapper
+var activeSnapper atomic.Pointer[Snapper]
 
 // SetSnapper registers the active image source as the snap target.
-// Call this once after the source is created and before the HTTP server starts.
 func SetSnapper(s Snapper) {
-	activeSnapper = s
+	if s == nil {
+		activeSnapper.Store(nil)
+	} else {
+		activeSnapper.Store(&s)
+	}
+}
+
+func getSnapper() Snapper {
+	if p := activeSnapper.Load(); p != nil {
+		return *p
+	}
+	return nil
 }
 
 var apiRouteMethods = map[string][]string{
@@ -63,7 +74,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapHandler(w http.ResponseWriter, r *http.Request) {
-	if activeSnapper == nil {
+	s := getSnapper()
+	if s == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		writeJSON(w, map[string]string{"error": "no active camera source"})
@@ -75,7 +87,7 @@ func snapHandler(w http.ResponseWriter, r *http.Request) {
 		file = fmt.Sprintf("snapshot-%s.jpg", time.Now().Format("20060102-150405"))
 	}
 
-	if err := activeSnapper.Snap(file); err != nil {
+	if err := s.Snap(file); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeJSON(w, map[string]string{"error": err.Error()})

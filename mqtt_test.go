@@ -82,9 +82,9 @@ func TestMessengerStatusDisconnected(t *testing.T) {
 
 func TestHandleSnapCommandCallsSnapper(t *testing.T) {
 	ms := &mockSnapper{}
-	prev := activeSnapper
-	activeSnapper = ms
-	defer func() { activeSnapper = prev }()
+	prev := activeSnapper.Load()
+	SetSnapper(ms)
+	defer activeSnapper.Store(prev)
 
 	m := NewMessenger("", "/redeye")
 	m.handleMessage(nil, &mockMessage{
@@ -97,9 +97,9 @@ func TestHandleSnapCommandCallsSnapper(t *testing.T) {
 
 func TestHandleSnapCommandDefaultFilename(t *testing.T) {
 	ms := &mockSnapper{}
-	prev := activeSnapper
-	activeSnapper = ms
-	defer func() { activeSnapper = prev }()
+	prev := activeSnapper.Load()
+	SetSnapper(ms)
+	defer activeSnapper.Store(prev)
 
 	m := NewMessenger("", "/redeye")
 	m.handleMessage(nil, &mockMessage{
@@ -113,9 +113,9 @@ func TestHandleSnapCommandDefaultFilename(t *testing.T) {
 
 func TestHandleSnapCommandPropagatesSnapError(t *testing.T) {
 	ms := &mockSnapper{returnErr: fmt.Errorf("disk full")}
-	prev := activeSnapper
-	activeSnapper = ms
-	defer func() { activeSnapper = prev }()
+	prev := activeSnapper.Load()
+	SetSnapper(ms)
+	defer activeSnapper.Store(prev)
 
 	m := NewMessenger("", "/redeye")
 	// Should log the error and not panic.
@@ -129,9 +129,9 @@ func TestHandleSnapCommandPropagatesSnapError(t *testing.T) {
 }
 
 func TestHandleSnapCommandNoSnapper(t *testing.T) {
-	prev := activeSnapper
-	activeSnapper = nil
-	defer func() { activeSnapper = prev }()
+	prev := activeSnapper.Load()
+	SetSnapper(nil)
+	defer activeSnapper.Store(prev)
 
 	m := NewMessenger("", "/redeye")
 	assert.NotPanics(t, func() {

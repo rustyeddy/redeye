@@ -163,7 +163,7 @@ func (m *Messenger) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 		if file == "" {
 			file = fmt.Sprintf("snapshot-%s.jpg", time.Now().Format("20060102-150405"))
 		}
-		if s := activeSnapper; s != nil {
+		if s := getSnapper(); s != nil {
 			if err := s.Snap(file); err != nil {
 				log.Printf("MQTT snap error: %v", err)
 			} else {

@@ -159,7 +159,12 @@ func startServer() *http.Server {
 		Addr: config.HTTPAddr,
 	}
 
-	go server.ListenAndServe()
+	log.Printf("http: listening on %s", config.HTTPAddr)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("http: server error: %v", err)
+		}
+	}()
 	return server
 }
 
