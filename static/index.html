@@ -113,7 +113,7 @@
       border: 1px solid #2a4a2a;
     }
 
-    /* ── filter list ── */
+    /* ── filter / pipeline ── */
     .filter-list {
       list-style: none;
       padding: 0;
@@ -121,11 +121,51 @@
       font-size: .82rem;
     }
     .filter-list li {
-      padding: .25rem 0;
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+      padding: .3rem 0;
       border-bottom: 1px solid #222;
     }
     .filter-list li:last-child { border-bottom: none; }
-    .filter-list strong { color: #99f; }
+    .filter-toggle {
+      background: #1a1a2a;
+      border: 1px solid #334;
+      color: #778;
+      padding: .2rem .55rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: .8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .filter-toggle:hover { border-color: #55f; color: #aaf; }
+    .filter-toggle.active {
+      background: #1a2a4a;
+      border-color: #55f;
+      color: #99f;
+    }
+    .filter-desc { color: #555; font-size: .78rem; }
+    .pipeline-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin-bottom: .6rem;
+    }
+    .pipeline-tag {
+      background: #1a2a4a;
+      border: 1px solid #55f;
+      color: #99f;
+      padding: .2rem .55rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: .8rem;
+    }
+    .pipeline-tag:hover { background: #2a2a6a; }
+    .pipeline-empty { color: #444; font-size: .8rem; margin: 0 0 .5rem; }
+    .btn-sm { padding: .15rem .5rem; font-size: .78rem; }
 
     /* ── alerts ── */
     .alert {
@@ -193,14 +233,12 @@
       <div id="snap-result"></div>
     </div>
 
-    <!-- Available filters -->
-    <div class="card">
-      <h3>Filters</h3>
-      <div hx-get="/api/filters"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <p class="muted">Loading…</p>
-      </div>
+    <!-- Pipeline — loads and self-swaps on every toggle -->
+    <div id="pipeline-section"
+         hx-get="/api/camera/pipeline"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <p class="muted">Loading…</p>
     </div>
 
   </div>

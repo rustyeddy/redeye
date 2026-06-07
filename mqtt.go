@@ -15,10 +15,14 @@ import (
 //
 // Supported commands:
 //
-//	snap   Save the current frame. Optional "file" sets the output path.
+//	snap           Save the current frame. Optional "file" sets the output path.
+//	pipeline       Replace the active filter pipeline. "pipeline" is the descriptor string.
+//	toggle-filter  Toggle a single filter by name. "filter" is the filter name.
 type Command struct {
-	Command string `json:"command"`
-	File    string `json:"file,omitempty"`
+	Command  string `json:"command"`
+	File     string `json:"file,omitempty"`
+	Pipeline string `json:"pipeline,omitempty"`
+	Filter   string `json:"filter,omitempty"`
 }
 
 // MessengerStatus is returned by Status() and the /api/messenger endpoint.
@@ -173,6 +177,24 @@ func (m *Messenger) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 		} else {
 			slog.Warn("MQTT snap: no active camera source")
 		}
+	case "pipeline":
+		p, err := NewPipeline(cmd.Pipeline)
+		if err != nil {
+			slog.Error("MQTT pipeline error", "err", err)
+			return
+		}
+		SetPipeline(p)
+		slog.Info("MQTT pipeline updated", "pipeline", cmd.Pipeline)
+	case "toggle-filter":
+		if cmd.Filter == "" {
+			slog.Warn("MQTT toggle-filter: missing filter name")
+			return
+		}
+		if _, err := ToggleFilter(cmd.Filter); err != nil {
+			slog.Error("MQTT toggle-filter error", "filter", cmd.Filter, "err", err)
+			return
+		}
+		slog.Info("MQTT filter toggled", "filter", cmd.Filter, "pipeline", GetPipeline().Str)
 	default:
 		slog.Warn("MQTT unknown command", "command", cmd.Command, "topic", msg.Topic())
 	}

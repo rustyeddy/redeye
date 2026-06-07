@@ -76,13 +76,14 @@ func main() {
 		}
 	}
 
-	// Set up the pipeline
+	// Set up the pipeline and register it as the active pipeline so it can
+	// be swapped at runtime via REST or MQTT.
 	pipeline, err := redeye.NewPipeline(config.Pipeline)
 	if err != nil {
 		slog.Error("invalid pipeline", "err", err)
 		os.Exit(1)
 	}
-	defer pipeline.Close()
+	redeye.SetPipeline(pipeline)
 
 	// Start the outputs windows and MJPEG server
 	w := startWindows(config)
@@ -115,7 +116,7 @@ func main() {
 			if !ok {
 				return
 			}
-			for _, flt := range pipeline.Filters {
+			for _, flt := range redeye.GetPipeline().Filters {
 				f = flt.Filter(f)
 			}
 			var wg sync.WaitGroup

@@ -45,6 +45,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.Handle("/api/filters", Filters)
 	mux.Handle("/api/camera/snap", postOnly(http.HandlerFunc(snapHandler)))
 	mux.HandleFunc("/api/camera/config", configHandler)
+	mux.HandleFunc("/api/camera/pipeline", pipelineHandler)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -128,6 +129,12 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		// Apply the pipeline string immediately so it takes effect without restart.
+		if p, err := NewPipeline(Config.Pipeline); err == nil {
+			SetPipeline(p)
+		} else {
+			slog.Warn("config: invalid pipeline string, pipeline unchanged", "err", err)
+		}
 		if isHTMX(r) {
 			renderTemplate(w, "config.html", configFormData{Config: Config, Message: "Configuration saved."})
 			return
@@ -149,6 +156,83 @@ func applyConfigForm(r *http.Request, c *Configuration) {
 	c.MQTTTopicPrefix = r.FormValue("topic-prefix")
 	c.LogFile         = r.FormValue("log")
 	c.LogLevel        = r.FormValue("log-level")
+}
+
+// pipelineHandler manages the active filter pipeline at runtime.
+//
+//   GET  /api/camera/pipeline          — current pipeline (JSON or HTML)
+//   POST /api/camera/pipeline          — set or toggle filters
+//
+// POST form/JSON fields:
+//
+//	filter=<name>   toggle that filter on or off in the active pipeline
+//	pipeline=<str>  replace the entire pipeline (empty string clears it)
+func pipelineHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		if isHTMX(r) {
+			renderTemplate(w, "pipeline.html", buildPipelineViewData())
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]string{"pipeline": GetPipeline().Str})
+
+	case http.MethodPost:
+		var filterName, pipeStr string
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+			var req struct {
+				Filter   string `json:"filter"`
+				Pipeline string `json:"pipeline"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				writeJSON(w, map[string]string{"error": err.Error()})
+				return
+			}
+			filterName, pipeStr = req.Filter, req.Pipeline
+		} else {
+			filterName = r.FormValue("filter")
+			pipeStr = r.FormValue("pipeline")
+		}
+
+		if filterName != "" {
+			if _, err := ToggleFilter(filterName); err != nil {
+				if isHTMX(r) {
+					renderTemplate(w, "pipeline.html", buildPipelineViewData())
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				writeJSON(w, map[string]string{"error": err.Error()})
+				return
+			}
+		} else {
+			p, err := NewPipeline(pipeStr)
+			if err != nil {
+				if isHTMX(r) {
+					renderTemplate(w, "pipeline.html", buildPipelineViewData())
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				writeJSON(w, map[string]string{"error": err.Error()})
+				return
+			}
+			SetPipeline(p)
+		}
+
+		if isHTMX(r) {
+			renderTemplate(w, "pipeline.html", buildPipelineViewData())
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]string{"pipeline": GetPipeline().Str})
+
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 // postOnly wraps a handler to reject non-POST requests with 405.

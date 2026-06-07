@@ -1,0 +1,38 @@
+<div id="pipeline-section" class="card">
+  <h3>Pipeline</h3>
+
+  {{if .Active}}
+  <div class="pipeline-tags">
+    {{range .Registered}}{{if index $.Active .Name}}
+    <button class="pipeline-tag"
+            hx-post="/api/camera/pipeline"
+            hx-vals='{"filter": "{{.Name}}"}'
+            hx-target="#pipeline-section"
+            hx-swap="outerHTML"
+            title="Remove {{.Name}}">{{.Name}} ×</button>
+    {{end}}{{end}}
+  </div>
+  {{else}}
+  <p class="muted pipeline-empty">No filters active. Click one below to add it.</p>
+  {{end}}
+
+  <button class="btn btn-sm"
+          style="margin-bottom:.6rem"
+          hx-post="/api/camera/pipeline"
+          hx-vals='{"pipeline": ""}'
+          hx-target="#pipeline-section"
+          hx-swap="outerHTML">Clear</button>
+
+  <ul class="filter-list">
+  {{range .Registered}}
+  <li>
+    <button class="filter-toggle{{if index $.Active .Name}} active{{end}}"
+            hx-post="/api/camera/pipeline"
+            hx-vals='{"filter": "{{.Name}}"}'
+            hx-target="#pipeline-section"
+            hx-swap="outerHTML">{{.Name}}</button>
+    <span class="filter-desc">{{.Desc}}</span>
+  </li>
+  {{end}}
+  </ul>
+</div>

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"sort"
 )
 
 //go:embed templates
@@ -41,8 +42,30 @@ type configFormData struct {
 	Message string // optional feedback after a save
 }
 
-// filterEntry is a name/description pair passed to templates/filters.html.
+// filterEntry is a name/description pair used in filter and pipeline templates.
 type filterEntry struct {
 	Name string
 	Desc string
+}
+
+// pipelineViewData is passed to templates/pipeline.html.
+type pipelineViewData struct {
+	ActiveStr  string          // descriptor string of the active pipeline
+	Active     map[string]bool // set of active filter names
+	Registered []filterEntry   // all registered filters, sorted by name
+}
+
+// buildPipelineViewData assembles a pipelineViewData from the current state.
+func buildPipelineViewData() pipelineViewData {
+	p := GetPipeline()
+	active := make(map[string]bool, len(p.Filters))
+	for _, flt := range p.Filters {
+		active[flt.Name()] = true
+	}
+	entries := make([]filterEntry, 0, len(Filters))
+	for _, flt := range Filters {
+		entries = append(entries, filterEntry{Name: flt.Name(), Desc: flt.Desc()})
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+	return pipelineViewData{ActiveStr: p.Str, Active: active, Registered: entries}
 }

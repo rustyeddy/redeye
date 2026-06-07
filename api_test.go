@@ -178,3 +178,111 @@ func TestSnapHandlerPropagatesSnapError(t *testing.T) {
 	require.NoError(t, json.NewDecoder(rr.Body).Decode(&body))
 	assert.Contains(t, body["error"], "disk full")
 }
+
+// --- pipeline handler ---
+
+func pipelineMux(t *testing.T) *http.ServeMux {
+	t.Helper()
+	mux := http.NewServeMux()
+	prev := activePipeline.Load()
+	t.Cleanup(func() { activePipeline.Store(prev) })
+	RegisterAPIRoutes(mux)
+	return mux
+}
+
+func TestPipelineHandlerGetEmpty(t *testing.T) {
+	mux := pipelineMux(t)
+	activePipeline.Store(&Pipeline{})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/camera/pipeline", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	var body map[string]string
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&body))
+	assert.Equal(t, "", body["pipeline"])
+}
+
+const testFilterName = "test-filter" // name chosen to not conflict with real registered filters
+
+func registerTestFilter(t *testing.T) {
+	t.Helper()
+	Filters.Add(testFilterName, &dummyFilter{name: testFilterName})
+	t.Cleanup(func() { delete(Filters, testFilterName) })
+}
+
+func TestPipelineHandlerSetViaJSON(t *testing.T) {
+	registerTestFilter(t)
+	mux := pipelineMux(t)
+
+	body := strings.NewReader(`{"pipeline":"test-filter"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/camera/pipeline", body)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	var resp map[string]string
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&resp))
+	assert.Equal(t, testFilterName, resp["pipeline"])
+	assert.Equal(t, testFilterName, GetPipeline().Str)
+}
+
+func TestPipelineHandlerToggleViaForm(t *testing.T) {
+	registerTestFilter(t)
+	mux := pipelineMux(t)
+	activePipeline.Store(&Pipeline{})
+
+	// toggle on
+	req := httptest.NewRequest(http.MethodPost, "/api/camera/pipeline",
+		strings.NewReader("filter="+testFilterName))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, testFilterName, GetPipeline().Str)
+
+	// toggle off
+	req2 := httptest.NewRequest(http.MethodPost, "/api/camera/pipeline",
+		strings.NewReader("filter="+testFilterName))
+	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr2 := httptest.NewRecorder()
+	mux.ServeHTTP(rr2, req2)
+	require.Equal(t, http.StatusOK, rr2.Code)
+	assert.Equal(t, "", GetPipeline().Str)
+}
+
+func TestPipelineHandlerClearViaForm(t *testing.T) {
+	registerTestFilter(t)
+	mux := pipelineMux(t)
+	p, _ := NewPipeline(testFilterName)
+	activePipeline.Store(p)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/camera/pipeline",
+		strings.NewReader("pipeline="))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "", GetPipeline().Str)
+	assert.Empty(t, GetPipeline().Filters)
+}
+
+func TestPipelineHandlerRejectsUnsupportedMethod(t *testing.T) {
+	mux := pipelineMux(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/camera/pipeline", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+	assert.Equal(t, "GET, POST", rr.Header().Get("Allow"))
+}
+
+// dummyFilter is a minimal Filter used in API tests to avoid importing filter packages.
+type dummyFilter struct{ name string }
+
+func (d *dummyFilter) Name() string        { return d.name }
+func (d *dummyFilter) Desc() string        { return "test filter" }
+func (d *dummyFilter) Init(_ string)       {}
+func (d *dummyFilter) Filter(f *Frame) *Frame { return f }
