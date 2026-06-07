@@ -48,6 +48,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/camera/config", configHandler)
 	mux.HandleFunc("/api/camera/pipeline", pipelineHandler)
 	mux.HandleFunc("/api/camera/filter/param", filterParamHandler)
+	mux.HandleFunc("/api/plugins/load", pluginLoadHandler)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -281,6 +282,54 @@ func filterParamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	writeJSON(w, map[string]string{"ok": "1"})
+}
+
+// pluginLoadHandler hot-loads a .so plugin at runtime.
+//
+//	POST /api/plugins/load
+//	  path=<filepath>   path to the .so file (form or JSON {"path":"..."})
+//
+// On success the pipeline section HTML fragment is returned so htmx can
+// refresh the filter list immediately.
+func pluginLoadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var path string
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		var req struct {
+			Path string `json:"path"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		path = req.Path
+	} else {
+		path = r.FormValue("path")
+	}
+	if path == "" {
+		http.Error(w, "path is required", http.StatusBadRequest)
+		return
+	}
+	if err := LoadPlugin(path); err != nil {
+		if isHTMX(r) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		writeJSON(w, map[string]string{"error": err.Error()})
+		return
+	}
+	if isHTMX(r) {
+		renderTemplate(w, "pipeline.html", buildPipelineViewData())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, map[string]string{"path": path, "ok": "1"})
 }
 
 // postOnly wraps a handler to reject non-POST requests with 405.

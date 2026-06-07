@@ -26,6 +26,7 @@ func init() {
 	flag.StringVar(&config.CascadeFile, "cascade-file", "/usr/local/share/opencv4/haarcascades/haarcascade_frontalface_default.xml", "cascade file")
 	flag.StringVar(&config.HTTPAddr, "addr", "0.0.0.0:9382", "Default http addr 8080")
 	flag.BoolVar(&config.ListFilters, "filters", false, "list available filters")
+	flag.StringVar(&config.PluginDir, "plugins", "plugins", "directory of .so filter plugins to load at startup")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.StringVar(&config.VideoDevice, "device", "0", "Camera device: index (0,1,…), name (jetson,nano,rpi,linux,mac), or path (/dev/video0)")
 	flag.StringVar(&config.Image, "image", "", "Image name")
@@ -52,6 +53,13 @@ func main() {
 	}
 	if logCloser != nil {
 		defer logCloser.Close()
+	}
+
+	// Load any .so filter plugins from the plugin directory before building the pipeline.
+	if n, err := redeye.LoadPlugins(config.PluginDir); err != nil {
+		slog.Warn("plugin dir load error", "dir", config.PluginDir, "err", err)
+	} else if n > 0 {
+		slog.Info("plugins loaded", "count", n, "dir", config.PluginDir)
 	}
 
 	// list filters and exit if command list says so
