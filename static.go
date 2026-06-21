@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-//go:embed static/index.html
+//go:embed ui/static/index.html
 var indexHTML []byte
 
 func serveIndex(w http.ResponseWriter, r *http.Request) {

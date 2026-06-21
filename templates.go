@@ -8,10 +8,10 @@ import (
 	"sort"
 )
 
-//go:embed templates
+//go:embed ui/templates
 var templateFS embed.FS
 
-var tmpl = template.Must(template.ParseFS(templateFS, "templates/*.html"))
+var tmpl = template.Must(template.ParseFS(templateFS, "ui/templates/*.html"))
 
 // isHTMX reports whether the request was issued by htmx (HX-Request header).
 // Using this instead of Accept-header parsing avoids false positives from
