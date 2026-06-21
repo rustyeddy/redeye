@@ -3,9 +3,9 @@
 //
 // Pipeline syntax:
 //
-//	"text-zoom"      — 20× (default)
+//	"text-zoom"      — 1× (default)
 //	"text-zoom:40"   — 40×
-//	"text-zoom:80"   — 80×
+//	"text-zoom:100"  — 100×
 //
 // At zoom factor Z the filter extracts a (frameW/Z) × (frameH/Z) region from
 // the centre of the frame, enhances its contrast, and iteratively upscales it
@@ -18,17 +18,19 @@
 package textzoom
 
 import (
+	"fmt"
 	"image"
 	"math"
 	"strconv"
+	"sync"
 
 	"github.com/rustyeddy/redeye"
 	"gocv.io/x/gocv"
 )
 
 const (
-	defaultZoom    = 20.0
-	maxZoom        = 80.0
+	defaultZoom    = 1.0
+	maxZoom        = 100.0
 	claheClipLimit = 2.0
 	claheTileSize  = 8
 	denoiseSigma   = 0.5 // light pre-denoise: removes sensor noise, keeps edges
@@ -36,9 +38,10 @@ const (
 	sharpAmount    = 0.5 // unsharp-mask strength  (0 = none, 1 = strong)
 )
 
-// TextZoom is the filter implementation. The zoom field is set once at Init
-// time (before the pipeline starts), so no mutex is needed.
+// TextZoom is the filter implementation.
 type TextZoom struct {
+	mu sync.RWMutex
+
 	redeye.Flt
 	zoom float64
 }
@@ -53,8 +56,11 @@ func init() {
 }
 
 // Init parses the zoom factor from the pipeline config string.
-// Any value outside (0, 80] is clamped or ignored.
+// Any value outside (0, 100] is clamped or ignored.
 func (tz *TextZoom) Init(config string) {
+	tz.mu.Lock()
+	defer tz.mu.Unlock()
+
 	tz.zoom = defaultZoom
 	if config == "" {
 		return
@@ -72,6 +78,10 @@ func (tz *TextZoom) Init(config string) {
 // Filter extracts the centre ROI, enhances contrast, iteratively upscales
 // with sharpening, and writes the result back into the frame at original size.
 func (tz *TextZoom) Filter(frame *redeye.Frame) *redeye.Frame {
+	tz.mu.RLock()
+	zoom := effectiveZoom(tz.zoom)
+	tz.mu.RUnlock()
+
 	src := frame.Mat
 	frameW, frameH := src.Cols(), src.Rows()
 	if frameW == 0 || frameH == 0 {
@@ -79,8 +89,8 @@ func (tz *TextZoom) Filter(frame *redeye.Frame) *redeye.Frame {
 	}
 
 	// Compute ROI: centre of frame, sized frame ÷ zoom.
-	roiW := max(1, int(math.Round(float64(frameW)/tz.zoom)))
-	roiH := max(1, int(math.Round(float64(frameH)/tz.zoom)))
+	roiW := max(1, int(math.Round(float64(frameW)/zoom)))
+	roiH := max(1, int(math.Round(float64(frameH)/zoom)))
 	roiX := (frameW - roiW) / 2
 	roiY := (frameH - roiH) / 2
 
@@ -91,9 +101,10 @@ func (tz *TextZoom) Filter(frame *redeye.Frame) *redeye.Frame {
 	view.Close()
 	defer roi.Close()
 
-	// Contrast enhancement in LAB colour space (touches only luminance).
-	enhanced := enhanceContrast(roi)
-	defer enhanced.Close()
+	enhanced := roi
+	// // Contrast enhancement in LAB colour space (touches only luminance).
+	// enhanced := enhanceContrast(roi)
+	// defer enhanced.Close()
 
 	// Light Gaussian denoise before upscaling — removes sensor noise while
 	// leaving stroke edges intact. sigma=0.5 is intentionally gentle.
@@ -109,6 +120,45 @@ func (tz *TextZoom) Filter(frame *redeye.Frame) *redeye.Frame {
 
 	result.CopyTo(src)
 	return frame
+}
+
+// Params implements redeye.Parametric, exposing zoom as a runtime UI slider.
+func (tz *TextZoom) Params() []redeye.ParamDesc {
+	tz.mu.RLock()
+	defer tz.mu.RUnlock()
+
+	return []redeye.ParamDesc{
+		{Key: "zoom", Label: "Zoom", Type: "float", Min: 0, Max: maxZoom, Step: 1, Value: tz.zoom},
+	}
+}
+
+// SetParam implements redeye.Parametric.
+func (tz *TextZoom) SetParam(key string, value float64) error {
+	if key != "zoom" {
+		return fmt.Errorf("text-zoom: unknown param %q", key)
+	}
+
+	tz.mu.Lock()
+	defer tz.mu.Unlock()
+	tz.zoom = normalizeZoom(value)
+	return nil
+}
+
+func normalizeZoom(v float64) float64 {
+	if v < 0 {
+		return defaultZoom
+	}
+	if v > maxZoom {
+		return maxZoom
+	}
+	return v
+}
+
+func effectiveZoom(v float64) float64 {
+	if v <= 0 {
+		return defaultZoom
+	}
+	return v
 }
 
 // enhanceContrast applies CLAHE to the L channel of the LAB representation,

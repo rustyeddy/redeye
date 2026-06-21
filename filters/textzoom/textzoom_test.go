@@ -114,6 +114,61 @@ func TestFilterDoesNotPanicOnEmptyMat(t *testing.T) {
 	}
 }
 
+// --- Params ---
+
+func TestParamsExposeZoomSlider(t *testing.T) {
+	tz := &TextZoom{zoom: 12}
+	params := tz.Params()
+
+	if len(params) != 1 {
+		t.Fatalf("want one param, got %d", len(params))
+	}
+	got := params[0]
+	if got.Key != "zoom" || got.Label != "Zoom" || got.Min != 0 || got.Max != maxZoom || got.Step != 1 || got.Value != 12 {
+		t.Fatalf("unexpected param descriptor: %+v", got)
+	}
+}
+
+func TestSetParamUpdatesZoom(t *testing.T) {
+	tz := &TextZoom{zoom: defaultZoom}
+	if err := tz.SetParam("zoom", 42); err != nil {
+		t.Fatalf("SetParam returned error: %v", err)
+	}
+	if tz.zoom != 42 {
+		t.Fatalf("want zoom=42, got %v", tz.zoom)
+	}
+}
+
+func TestSetParamAllowsZeroSliderValue(t *testing.T) {
+	tz := &TextZoom{zoom: 10}
+	if err := tz.SetParam("zoom", 0); err != nil {
+		t.Fatalf("SetParam returned error: %v", err)
+	}
+	if tz.zoom != 0 {
+		t.Fatalf("want stored zoom=0, got %v", tz.zoom)
+	}
+	if effectiveZoom(tz.zoom) != defaultZoom {
+		t.Fatalf("want effective zoom default %.0f, got %v", defaultZoom, effectiveZoom(tz.zoom))
+	}
+}
+
+func TestSetParamClampsToMax(t *testing.T) {
+	tz := &TextZoom{zoom: defaultZoom}
+	if err := tz.SetParam("zoom", 200); err != nil {
+		t.Fatalf("SetParam returned error: %v", err)
+	}
+	if tz.zoom != maxZoom {
+		t.Fatalf("want zoom=max %.0f, got %v", maxZoom, tz.zoom)
+	}
+}
+
+func TestSetParamRejectsUnknownKey(t *testing.T) {
+	tz := &TextZoom{zoom: defaultZoom}
+	if err := tz.SetParam("scale", 10); err == nil {
+		t.Fatal("want error for unknown param")
+	}
+}
+
 // --- Helper functions ---
 
 func TestUnsharpMaskPreservesDimensions(t *testing.T) {
