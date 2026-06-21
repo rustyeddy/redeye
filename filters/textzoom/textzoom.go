@@ -203,6 +203,12 @@ func iterativeUpscale(src gocv.Mat, targetW, targetH int) gocv.Mat {
 		fw := float64(targetW) / float64(cur.Cols())
 		fh := float64(targetH) / float64(cur.Rows())
 		step := math.Min(math.Min(fw, fh), 2.0)
+		// Rounding can cause one dimension to hit the target while the other
+		// remains just short, leaving step at exactly 1.0 with no progress.
+		// Break and let the final exact-fit resize below handle it.
+		if step <= 1.0 {
+			break
+		}
 
 		newW := min(int(math.Round(float64(cur.Cols())*step)), targetW)
 		newH := min(int(math.Round(float64(cur.Rows())*step)), targetH)
