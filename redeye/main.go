@@ -202,9 +202,13 @@ func startImgSrc(config *redeye.Configuration) (imgsrc redeye.ImgSrc) {
 		imgsrc, err = redeye.GetVideo(config.Video)
 	} else {
 		imgsrc, err = redeye.GetCam(config.VideoDevice)
+		if err != nil {
+			slog.Warn("no camera available, starting without video", "device", config.VideoDevice, "err", err)
+			return redeye.NewNullSrc()
+		}
 	}
 	if err != nil {
-		slog.Error("failed to open video device", "device", config.VideoDevice, "err", err)
+		slog.Error("failed to open source", "err", err)
 		os.Exit(1)
 	}
 	return imgsrc

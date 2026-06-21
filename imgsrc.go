@@ -362,3 +362,39 @@ func (v *VideoFile) Close() error {
 	v.frames.Close()
 	return v.VideoCapture.Close()
 }
+
+// NullSrc is a no-op image source used when no camera or file is available.
+// It produces no frames but satisfies the ImgSrc interface so the rest of
+// the server (HTTP, MJPEG, pipeline) can still start.
+type NullSrc struct {
+	quit chan struct{}
+}
+
+func NewNullSrc() *NullSrc { return &NullSrc{quit: make(chan struct{})} }
+
+func (n *NullSrc) Play() chan *Frame {
+	ch := make(chan *Frame)
+	go func() {
+		<-n.quit
+		close(ch)
+	}()
+	return ch
+}
+
+func (n *NullSrc) IsRunning() bool {
+	select {
+	case <-n.quit:
+		return false
+	default:
+		return true
+	}
+}
+
+func (n *NullSrc) Close() error {
+	select {
+	case <-n.quit:
+	default:
+		close(n.quit)
+	}
+	return nil
+}
