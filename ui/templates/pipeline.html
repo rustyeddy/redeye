@@ -25,6 +25,7 @@
 
   <ul class="filter-list">
   {{range .Registered}}
+  {{$fname := .Name}}
   <li class="filter-item">
     <div class="filter-row">
       <button class="filter-toggle{{if index $.Active .Name}} active{{end}}"
@@ -35,18 +36,19 @@
       <span class="filter-desc">{{.Desc}}</span>
     </div>
     {{if .Params}}
-    <form class="filter-params"
-          hx-post="/api/camera/filter/param"
-          hx-target="#pipeline-section"
-          hx-swap="outerHTML"
-          hx-trigger="change">
-      <input type="hidden" name="filter" value="{{.Name}}">
+    <form class="filter-params">
+      <input type="hidden" name="filter" value="{{$fname}}">
       {{range .Params}}
       <div class="param-row">
         <label class="param-label">{{.Label}}</label>
         <input type="range" class="param-range"
                name="{{.Key}}"
                min="{{.Min}}" max="{{.Max}}" step="{{.Step}}" value="{{.Value}}"
+               hx-post="/api/camera/filter/param"
+               hx-target="#pipeline-section"
+               hx-swap="outerHTML"
+               hx-trigger="change"
+               hx-include="closest form"
                oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)">
         <span class="param-val">{{printf "%.2f" .Value}}</span>
       </div>
