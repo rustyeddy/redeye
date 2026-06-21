@@ -2,6 +2,9 @@ package redeye
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -9,6 +12,34 @@ import (
 
 	"gocv.io/x/gocv"
 )
+
+// CameraInfo holds the device path and human-readable name for one camera.
+type CameraInfo struct {
+	Device string // e.g. /dev/video0
+	Name   string // from /sys/class/video4linux/videoN/name, may be empty
+}
+
+// ListCameras returns available video devices, sorted by device path.
+// It reads names from sysfs when available.
+// Falls back to a single entry for device "0" if nothing is found.
+func ListCameras() []CameraInfo {
+	matches, _ := filepath.Glob("/dev/video*")
+	if len(matches) == 0 {
+		return []CameraInfo{{Device: "0"}}
+	}
+	sort.Strings(matches)
+	cameras := make([]CameraInfo, 0, len(matches))
+	for _, dev := range matches {
+		info := CameraInfo{Device: dev}
+		base := filepath.Base(dev) // videoN
+		nameFile := "/sys/class/video4linux/" + base + "/name"
+		if data, err := os.ReadFile(nameFile); err == nil {
+			info.Name = strings.TrimSpace(string(data))
+		}
+		cameras = append(cameras, info)
+	}
+	return cameras
+}
 
 // ImgSrc is an interface for all redeye sources including cameras,
 // video and image files.

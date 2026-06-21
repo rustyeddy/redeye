@@ -19,6 +19,14 @@ type Snapper interface {
 // activeSnapper is set once at startup by SetSnapper; nil means no source is running.
 var activeSnapper atomic.Pointer[Snapper]
 
+// cameraSwitchCh carries hot-swap requests from the API to the frame loop in main.
+var cameraSwitchCh = make(chan string, 1)
+
+// CameraSwitch returns the channel that delivers camera hot-swap device strings.
+// The frame loop in main should select on this channel and reopen the camera when
+// a value arrives.
+func CameraSwitch() <-chan string { return cameraSwitchCh }
+
 // SetSnapper registers the active image source as the snap target.
 func SetSnapper(s Snapper) {
 	if s == nil {
@@ -49,6 +57,8 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/camera/pipeline", pipelineHandler)
 	mux.HandleFunc("/api/camera/filter/param", filterParamHandler)
 	mux.HandleFunc("/api/plugins/load", pluginLoadHandler)
+	mux.HandleFunc("/api/cameras", camerasHandler)
+	mux.Handle("/api/camera/device", postOnly(http.HandlerFunc(cameraDeviceHandler)))
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -330,6 +340,43 @@ func pluginLoadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	writeJSON(w, map[string]string{"path": path, "ok": "1"})
+}
+
+// camerasHandler returns the list of available cameras and the current device.
+//
+//	GET /api/cameras
+func camerasHandler(w http.ResponseWriter, r *http.Request) {
+	cameras := ListCameras()
+	if isHTMX(r) {
+		renderTemplate(w, "cameras.html", cameraData{Cameras: cameras, Current: Config.VideoDevice})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, map[string]any{"cameras": cameras, "current": Config.VideoDevice})
+}
+
+// cameraDeviceHandler switches the active camera at runtime.
+//
+//	POST /api/camera/device
+//	  device=<path|index>
+func cameraDeviceHandler(w http.ResponseWriter, r *http.Request) {
+	device := r.FormValue("device")
+	if device == "" {
+		http.Error(w, "device is required", http.StatusBadRequest)
+		return
+	}
+	Config.VideoDevice = device
+	select {
+	case cameraSwitchCh <- device:
+	default:
+	}
+	cameras := ListCameras()
+	if isHTMX(r) {
+		renderTemplate(w, "cameras.html", cameraData{Cameras: cameras, Current: device, Message: "Switching to " + device + "…"})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, map[string]string{"device": device})
 }
 
 // postOnly wraps a handler to reject non-POST requests with 405.

@@ -42,6 +42,13 @@ type configFormData struct {
 	Message string // optional feedback after a save
 }
 
+// cameraData is passed to templates/cameras.html.
+type cameraData struct {
+	Cameras []CameraInfo
+	Current string
+	Message string
+}
+
 // filterEntry is a name/description pair used in filter and pipeline templates.
 // Params is non-nil only when the filter is active and implements Parametric.
 type filterEntry struct {

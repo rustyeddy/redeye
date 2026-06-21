@@ -29,6 +29,8 @@ func init() {
 	flag.StringVar(&config.PluginDir, "plugins", "plugins", "directory of .so filter plugins to load at startup")
 	flag.StringVar(&config.Pipeline, "pipeline", "", "list of fliters separated by colons")
 	flag.StringVar(&config.VideoDevice, "device", "0", "Camera device: index (0,1,…), name (jetson,nano,rpi,linux,mac), or path (/dev/video0)")
+	flag.StringVar(&config.VideoDevice, "camera", "0", "Camera to use (alias for --device)")
+	flag.BoolVar(&config.ListCameras, "list-cameras", false, "print available cameras and exit")
 	flag.StringVar(&config.Image, "image", "", "Image name")
 	flag.StringVar(&config.Video, "video", "", "Video file name")
 	flag.StringVar(&config.RTSPUrl, "rtsp", "", "RTSP stream URL (e.g. rtsp://camera.local/stream)")
@@ -45,7 +47,6 @@ func main() {
 	}
 
 	flag.Parse()
-
 	logCloser, err := redeye.InitLogger(config.LogFile, config.LogLevel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logger init: %v\n", err)
@@ -55,6 +56,17 @@ func main() {
 		defer logCloser.Close()
 	}
 
+	if config.ListCameras {
+		for _, cam := range redeye.ListCameras() {
+			if cam.Name != "" {
+				fmt.Printf("%-14s  %s\n", cam.Device, cam.Name)
+			} else {
+				fmt.Println(cam.Device)
+			}
+		}
+		os.Exit(0)
+	}
+
 	// Load any .so filter plugins from the plugin directory before building the pipeline.
 	if n, err := redeye.LoadPlugins(config.PluginDir); err != nil {
 		slog.Warn("plugin dir load error", "dir", config.PluginDir, "err", err)
@@ -62,7 +74,6 @@ func main() {
 		slog.Info("plugins loaded", "count", n, "dir", config.PluginDir)
 	}
 
-	// list filters and exit if command list says so
 	if config.ListFilters {
 		listFilters()
 		os.Exit(0)
@@ -115,29 +126,7 @@ func main() {
 	outputs = append(outputs, mjpeg.Play())
 	outputs = append(outputs, w.Play())
 
-	frameQ := imgsrc.Play()
-	for imgsrc.IsRunning() {
-		select {
-		case <-done:
-			return
-		case f, ok := <-frameQ:
-			if !ok {
-				return
-			}
-			for _, flt := range redeye.GetPipeline().Filters {
-				f = flt.Filter(f)
-			}
-			var wg sync.WaitGroup
-			for _, outQ := range outputs {
-				wg.Add(1)
-				go func(ch chan *redeye.Frame) {
-					defer wg.Done()
-					ch <- f
-				}(outQ)
-			}
-			wg.Wait()
-		}
-	}
+	runFrames(imgsrc, outputs, done)
 
 	// For a static image, hold the window open until the user presses a key
 	// or the process is interrupted. Only the Window goroutine calls WaitKey;
@@ -147,6 +136,56 @@ func main() {
 		case <-done:
 		case <-w.KeyPressed():
 		}
+	}
+}
+
+// runFrames feeds frames from imgsrc through the active pipeline to all outputs.
+// It listens for camera hot-swap requests on redeye.CameraSwitch(): on receipt
+// it closes the current source, opens the new one, and resumes without restart.
+func runFrames(imgsrc redeye.ImgSrc, outputs []chan *redeye.Frame, done <-chan struct{}) {
+	for {
+		frameQ := imgsrc.Play()
+		newDevice := ""
+	stream:
+		for {
+			select {
+			case <-done:
+				return
+			case device := <-redeye.CameraSwitch():
+				newDevice = device
+				break stream
+			case f, ok := <-frameQ:
+				if !ok {
+					return
+				}
+				for _, flt := range redeye.GetPipeline().Filters {
+					f = flt.Filter(f)
+				}
+				var wg sync.WaitGroup
+				for _, outQ := range outputs {
+					wg.Add(1)
+					go func(ch chan *redeye.Frame) {
+						defer wg.Done()
+						ch <- f
+					}(outQ)
+				}
+				wg.Wait()
+			}
+		}
+
+		// Close current camera first, then open the new one.
+		imgsrc.Close()
+		newCam, err := redeye.GetCam(newDevice)
+		if err != nil {
+			slog.Error("camera switch failed", "device", newDevice, "err", err)
+			return
+		}
+		imgsrc = newCam
+		redeye.Config.VideoDevice = newDevice
+		if s, ok := imgsrc.(redeye.Snapper); ok {
+			redeye.SetSnapper(s)
+		}
+		slog.Info("camera switched", "device", newDevice)
 	}
 }
 

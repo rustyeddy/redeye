@@ -23,8 +23,9 @@ type Configuration struct {
 	Pipeline    string `json:"pipeline"`
 	WaitTime    int    `json:"wait-time"`
 
-	PluginDir   string `json:"plugin-dir"`   // directory of .so filter plugins to load at startup
-	ListFilters bool   `json:"list-filters"` // List filters
+	PluginDir    string `json:"plugin-dir"`    // directory of .so filter plugins to load at startup
+	ListFilters  bool   `json:"list-filters"`  // List filters
+	ListCameras  bool   `json:"list-cameras"`  // Print available cameras and exit
 
 	LogFile  string `json:"log-file"`  // log destination: stderr, stdout, or a file path
 	LogLevel string `json:"log-level"` // debug | info | warn | error

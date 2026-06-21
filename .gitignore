@@ -19,3 +19,6 @@ __debug_bin
 re/re
 cam/cam
 stream/stream
+bin
+*.jpg
+*.log

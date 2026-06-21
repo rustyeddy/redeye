@@ -1,0 +1,18 @@
+<div id="camera-section" class="card">
+  <h3>Camera</h3>
+  {{if .Message}}<p class="form-message">{{.Message}}</p>{{end}}
+  <form hx-post="/api/camera/device"
+        hx-target="#camera-section"
+        hx-swap="outerHTML">
+    <div class="input-row">
+      <select name="device">
+        {{range .Cameras}}
+        <option value="{{.Device}}"{{if eq .Device $.Current}} selected{{end}}>
+          {{- .Device}}{{if .Name}} — {{.Name}}{{end -}}
+        </option>
+        {{end}}
+      </select>
+      <button type="submit" class="btn">Switch</button>
+    </div>
+  </form>
+</div>

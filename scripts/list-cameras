@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# List available video capture devices and their names.
+# Uses /sys/class/video4linux so no external tools are required.
+
+set -euo pipefail
+
+SYS=/sys/class/video4linux
+
+if [ ! -d "$SYS" ]; then
+    echo "No video4linux devices found (is the kernel module loaded?)" >&2
+    exit 1
+fi
+
+found=0
+for dev in "$SYS"/video*; do
+    [ -d "$dev" ] || continue
+    name=$(basename "$dev")          # e.g. video0
+    device="/dev/$name"
+    label=""
+    if [ -f "$dev/name" ]; then
+        label=$(cat "$dev/name")
+    fi
+    printf "%-12s  %s\n" "$device" "$label"
+    found=$((found + 1))
+done
+
+if [ "$found" -eq 0 ]; then
+    echo "No video devices found."
+    exit 1
+fi

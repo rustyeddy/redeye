@@ -253,6 +253,14 @@
       <div id="snap-result"></div>
     </div>
 
+    <!-- Camera selector -->
+    <div id="camera-section"
+         hx-get="/api/cameras"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <p class="muted">Loading…</p>
+    </div>
+
     <!-- Pipeline — loads and self-swaps on every toggle -->
     <div id="pipeline-section"
          hx-get="/api/camera/pipeline"
